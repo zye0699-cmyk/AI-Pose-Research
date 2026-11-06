@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 影像動作辨識教學動畫</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f6f9;--card:#ffffff;--ink:#1f3a56;--muted:#5d6b7a;--line:#dde5ec;
+  --blue:#3a72b8;--green:#4f8a6e;--orange:#c8743f;--purple:#7a68a8;--red:#c0504d;--teal:#3f8f8a;
+  --soft-blue:#e9f1fa;--soft-green:#ecf5f0;--soft-orange:#fbf0e7;--soft-purple:#f1edf8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif}
+header{padding:18px 24px 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.kicker{font-size:12px;letter-spacing:.14em;color:#7d8fa3}
+h1{margin:4px 0 0;font-size:28px;font-weight:700}
+nav{display:flex;gap:6px;flex-wrap:wrap;padding:10px 24px;position:sticky;top:0;background:var(--bg);z-index:5;border-bottom:1px solid var(--line)}
+nav button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:7px 14px;font:inherit;font-size:15px;cursor:pointer}
+nav button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+nav button span{opacity:.6;margin-right:4px;font-size:13px}
+.panel{display:none;grid-template-columns:minmax(0,1fr) 360px;gap:16px;padding:16px 24px 28px}
+.panel.on{display:grid}
+.stage{background:#fff;border-radius:16px;border:1px solid var(--line);position:relative;height:min(74vh,680px);min-height:440px;overflow:hidden;touch-action:none}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.side{display:flex;flex-direction:column;gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card h3{margin:0 0 8px;font-size:16px}
+.formula{font-family:"Cambria Math","Times New Roman",serif;font-size:21px;text-align:center;background:var(--soft-orange);color:#7a4421;border-radius:10px;padding:10px 8px;margin-bottom:8px}
+.formula small{display:block;font-family:"Noto Sans TC",sans-serif;font-size:13px;color:var(--muted);margin-top:2px}
+.ctrl{display:flex;flex-direction:column;gap:10px}
+.ctrl label{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+.ctrl label b{color:var(--ink);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:6px 11px;cursor:pointer;font:inherit;font-size:14px}
+.btn:hover{border-color:#a9bacb}
+.btn.primary,.btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.chk{display:flex;gap:6px;align-items:center;font-size:14px;color:var(--ink)}
+.readout{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:15px}
+.readout span{color:var(--muted)}
+.readout b{font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+ul.pts{margin:0;padding-left:18px;font-size:14.5px;line-height:1.7}
+.plain{background:var(--soft-green);border-color:#d3e6dc;font-size:14.5px;line-height:1.7}
+.plain b{color:var(--green)}
+.ask{background:var(--soft-purple);border-color:#e2dbf0;color:#4f4380;font-size:14.5px;line-height:1.6}
+.ask b{color:var(--purple)}
+table.t{width:100%;border-collapse:collapse;font-size:13.5px}
+table.t th,table.t td{border-bottom:1px solid var(--line);padding:5px 4px;text-align:left;vertical-align:top}
+table.t th{color:var(--muted);font-weight:500}
+.bar{height:8px;border-radius:4px;background:#e7edf3;overflow:hidden}
+.bar i{display:block;height:100%}
+.conf{display:grid;grid-template-columns:52px 1fr 40px;gap:4px 8px;align-items:center;font-size:13.5px}
+.src{font-size:12px;color:#8a99a8}
+@media (max-width:960px){
+  .panel{grid-template-columns:1fr}
+  .stage{height:64vh;min-height:380px}
+  header,nav,.panel{padding-left:16px;padding-right:16px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="kicker">AI × COMPUTER VISION × HUMAN MOVEMENT</div>
+    <h1>AI 影像動作辨識 基礎觀念動畫</h1>
+  </div>
+  <button class="btn" id="fs">⛶ 全螢幕（投影用）</button>
+</header>
+<nav id="tabs">
+  <button class="on" data-i="0"><span>1</span>像素與解析度</button>
+  <button data-i="1"><span>2</span>幀率與快門</button>
+  <button data-i="2"><span>3</span>光學與焦距</button>
+  <button data-i="3"><span>4</span>鏡頭變形與校正</button>
+  <button data-i="4"><span>5</span>拍攝角度誤差</button>
+  <button data-i="5"><span>6</span>光線與背景</button>
+  <button data-i="6"><span>7</span>人體骨架關鍵點</button>
+  <button data-i="7"><span>8</span>MediaPipe vs YOLO</button>
+  <button data-i="8"><span>9</span>座標與動作判定</button>
+  <span style="align-self:center;color:#8a99a8;font-size:13px;margin:0 4px">｜傳統光標分析：</span>
+  <button data-i="9"><span>10</span>光標→關節中心</button>
+  <button data-i="10"><span>11</span>肢段與全身質心</button>
+  <button data-i="11"><span>12</span>雙攝影機 3D 重建</button>
+</nav>
+
+<!-- 1 像素與解析度 -->
+<section class="panel on">
+  <div class="stage"><canvas id="c0"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <label>解析度 <b id="v0"></b></label>
+      <input type="range" id="s0" min="0" max="6" step="1" value="3">
+      <label class="chk"><input type="checkbox" id="k0s" checked> 顯示真實骨架 vs 像素化後的關鍵點</label>
+    </div>
+    <div class="card"><div class="readout" id="r0"></div></div>
+    <div class="card plain"><b>像素（pixel）</b>＝影像最小的小方格，每格只記錄一個顏色（R、G、B 三個 0–255 的數字）。<br><b>解析度</b>＝橫向 × 縱向有幾格。格子越少，每格代表的真實距離越大，AI 找到的關節位置就越「跳格」，角度就越不準。</div>
+    <div class="card ask"><b>課堂提問：</b>解析度從 1920×1080 降到 640×360，像素數量變成幾分之一？肘角誤差變大多少？</div>
+  </div>
+</section>
+
+<!-- 2 幀率與快門 -->
+<section class="panel">
+  <div class="stage"><canvas id="c1"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <div class="btns" id="m1"><button class="btn on" data-m="kick">踢腿：幀率與速度</button><button class="btn" data-m="wheel">車輪：混疊現象</button></div>
+      <label>幀率 FPS <b id="v1f"></b></label>
+      <input type="range" id="s1f" min="0" max="4" step="1" value="1">
+      <div id="kickCtl" class="ctrl">
+        <label>快門速度 <b id="v1s"></b></label>
+        <input type="range" id="s1s" min="0" max="5" step="1" value="1">
+      </div>
+      <div id="wheelCtl" class="ctrl" style="display:none">
+        <label>車輪真實轉速 <b id="v1r"></b></label>
+        <input type="range" id="s1r" min="0" max="30" step="0.25" value="3.5">
+        <label class="chk"><input type="checkbox" id="k1m" checked> 把一根輪輻標成紅色</label>
+      </div>
+    </div>
+    <div class="card"><div class="readout" id="r1"></div></div>
+    <div class="card plain" id="p1"></div>
+  </div>
+</section>
+
+<!-- 3 光學與焦距 -->
+<section class="panel">
+  <div class="stage"><canvas id="c2"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <div class="btns" id="m2"><button class="btn on" data-m="lens">成像原理</button><button class="btn" data-m="fov">焦距與拍攝距離</button></div>
+      <div id="lensCtl" class="ctrl">
+        <label>物體距離 <b id="v2o"></b></label><input type="range" id="s2o" min="7" max="30" step="0.5" value="16">
+        <label>焦距 f <b id="v2f"></b></label><input type="range" id="s2f" min="3" max="6" step="0.1" value="5">
+      </div>
+      <div id="fovCtl" class="ctrl" style="display:none">
+        <label>鏡頭焦距（等效 35mm）<b id="v2l"></b></label><input type="range" id="s2l" min="12" max="135" step="1" value="26">
+        <label>受試者距離 <b id="v2d"></b></label><input type="range" id="s2d" min="1" max="12" step="0.1" value="3.5">
+      </div>
+    </div>
+    <div class="card"><div class="readout" id="r2"></div></div>
+    <div class="card plain" id="p2"></div>
+  </div>
+</section>
+
+<!-- 4 鏡頭變形 -->
+<section class="panel">
+  <div class="stage"><canvas id="c3"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <label>鏡頭變形係數 k₁ <b id="v3"></b></label>
+      <input type="range" id="s3" min="-0.35" max="0.3" step="0.01" value="-0.3">
+      <div class="btns"><button class="btn" data-k="-0.32">廣角／運動相機</button><button class="btn" data-k="-0.08">一般手機</button><button class="btn" data-k="0">理想鏡頭</button><button class="btn" data-k="0.2">望遠（枕形）</button></div>
+      <div class="btns"><button class="btn primary" id="b3cal">▶ 模擬棋盤格校正</button><label class="chk"><input type="checkbox" id="k3u"> 套用校正</label></div>
+    </div>
+    <div class="card"><div class="readout" id="r3"></div></div>
+    <div class="card plain"><b>鏡頭變形：</b>廣角鏡頭會讓畫面邊緣的直線彎成弧形（桶形變形），越靠邊越嚴重。<br><b>相機校正：</b>拍攝多張不同角度的棋盤格，電腦找到格點，就能算出變形係數，再把影像「拉直」。<br><b>比例尺校正：</b>在動作平面放一把已知長度的尺，換算「幾像素 = 1 公尺」。</div>
+    <div class="card ask"><b>課堂提問：</b>受試者站在畫面邊緣時，量到的身高會比站在中間時高還是矮？</div>
+  </div>
+</section>
+
+<!-- 5 拍攝角度 -->
+<section class="panel">
+  <div class="stage"><canvas id="c4"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <label>真實膝關節角度 <b id="v4k"></b></label><input type="range" id="s4k" min="60" max="180" step="1" value="100">
+      <label>攝影機水平偏離角（0° = 正側面）<b id="v4y"></b></label><input type="range" id="s4y" min="0" max="85" step="1" value="30">
+      <label>攝影機俯角（往下拍）<b id="v4p"></b></label><input type="range" id="s4p" min="0" max="60" step="1" value="0">
+    </div>
+    <div class="card"><div class="readout" id="r4"></div></div>
+    <div class="card plain"><b>2D 影像只有平面：</b>一般攝影機把 3D 的身體「壓扁」成 2D。<br>鏡頭沒有正對動作平面時，畫面上的角度就不是真實角度。<br>解法：鏡頭<b>垂直於動作平面</b>、和關節<b>同高</b>；需要 3D 時用多台攝影機。</div>
+    <div class="card ask"><b>課堂提問：</b>拍深蹲時，學生把手機斜放在前方 45°，量到的膝角會偏大還是偏小？</div>
+  </div>
+</section>
+
+<!-- 6 光線與背景 -->
+<section class="panel">
+  <div class="stage"><canvas id="c5"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <label>曝光 <b id="v5e"></b></label><input type="range" id="s5e" min="-2" max="2" step="0.1" value="0">
+      <label>感光度（雜訊）<b id="v5n"></b></label><input type="range" id="s5n" min="0" max="1" step="0.05" value="0.1">
+      <label class="chk"><input type="checkbox" id="k5b"> 背光（站在窗戶前）</label>
+      <label class="chk"><input type="checkbox" id="k5c"> 背景雜亂</label>
+      <label class="chk"><input type="checkbox" id="k5s"> 衣服顏色和牆壁很像</label>
+      <div class="btns"><button class="btn" id="b5good">✓ 良好拍攝條件</button></div>
+    </div>
+    <div class="card"><h3>AI 關鍵點信心值</h3><div class="conf" id="r5c"></div><div class="readout" id="r5" style="margin-top:10px"></div></div>
+    <div class="card plain"><b>AI 是靠「顏色差異與邊緣」找到人。</b>太暗、太亮、背光、雜訊多、背景亂、衣服和背景同色，都會讓邊緣變模糊 → 信心值下降、關鍵點亂跳甚至消失。</div>
+    <div class="src">對應講義 p.15、17（場域建議、資料品質）</div>
+  </div>
+</section>
+
+<!-- 7 骨架 -->
+<section class="panel">
+  <div class="stage"><canvas id="c6"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <div class="btns" id="m6"><button class="btn on" data-m="coco">YOLOv8-Pose（17 點）</button><button class="btn" data-m="mp">MediaPipe（33 點）</button></div>
+      <label>下蹲深度 <b id="v6"></b></label><input type="range" id="s6" min="0" max="100" value="60">
+      <label class="chk"><input type="checkbox" id="k6p" checked> 自動播放</label>
+      <div class="src">滑鼠移到關鍵點上可看名稱與編號</div>
+    </div>
+    <div class="card">
+      <div class="formula">θ = arccos( <b>BA</b>·<b>BC</b> / |<b>BA</b>||<b>BC</b>| )<small>B＝膝（頂點），A＝髖，C＝踝</small></div>
+      <div class="readout" id="r6"></div>
+    </div>
+    <div class="card plain"><b>關鍵點</b>就是 AI 輸出的一串座標 (x, y)。<br>有了三個點，就能用向量算出關節角度 — 這就是「從影像到動作分析」的核心步驟。</div>
+    <div class="src">對應講義 p.2–5</div>
+  </div>
+</section>
+
+<!-- 8 MP vs YOLO -->
+<section class="panel">
+  <div class="stage"><canvas id="c7"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <div class="btns" id="m7"><button class="btn on" data-m="yolo">YOLOv8-Pose</button><button class="btn" data-m="mp">MediaPipe Pose</button></div>
+      <label>畫面中人數 <b id="v7"></b></label><input type="range" id="s7" min="1" max="6" step="1" value="3">
+    </div>
+    <div class="card"><table class="t">
+      <tr><th></th><th>MediaPipe</th><th>YOLOv8-Pose</th></tr>
+      <tr><td>關鍵點</td><td>33 點（含手指、腳跟、腳尖，另有深度 z 與可見度）</td><td>17 點（COCO 格式）</td></tr>
+      <tr><td>多人</td><td>擅長單人；設多人時每人各算一次</td><td>一次推論同時找出所有人</td></tr>
+      <tr><td>速度</td><td>輕量，一般筆電、手機就能跑</td><td>較吃運算，有 GPU 更順</td></tr>
+      <tr><td>部署</td><td>容易，瀏覽器／手機也能用</td><td>需安裝 ultralytics 等環境</td></tr>
+      <tr><td>適合</td><td>個人訓練、教學、即時回饋</td><td>多人互動、課堂遊戲、專題</td></tr>
+    </table><div class="src" style="margin-top:6px">對應講義 p.9</div></div>
+    <div class="card plain" id="p7"></div>
+  </div>
+</section>
+
+<!-- 9 座標與判定 -->
+<section class="panel">
+  <div class="stage"><canvas id="c8"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <div class="btns" id="m8"><button class="btn on" data-m="raise">舉手判定</button><button class="btn" data-m="squat">深蹲計數</button></div>
+      <div id="raiseCtl" class="ctrl">
+        <label>手臂抬起角度 <b id="v8a"></b></label><input type="range" id="s8a" min="0" max="180" step="1" value="60">
+        <label class="chk"><input type="checkbox" id="k8p" checked> 自動播放</label>
+      </div>
+      <div id="squatCtl" class="ctrl" style="display:none">
+        <label>關鍵點雜訊（抖動）<b id="v8n"></b></label><input type="range" id="s8n" min="0" max="12" step="0.5" value="5">
+        <button class="btn" id="b8r">重新開始</button>
+      </div>
+    </div>
+    <div class="card"><div class="readout" id="r8"></div></div>
+    <div class="card plain" id="p8"></div>
+    <div class="src">對應講義 p.6、14（最快舉手偵測）</div>
+  </div>
+</section>
+
+<!-- 10 光標→關節中心 -->
+<section class="panel">
+  <div class="stage"><canvas id="c9"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <div class="btns" id="m9"><button class="btn on" data-m="jc">關節中心推算</button><button class="btn" data-m="lcs">肢段局部座標系</button></div>
+      <div id="jcCtl" class="ctrl">
+        <label>兩側 ASIS 距離 <b id="v9w"></b></label><input type="range" id="s9w" min="20" max="32" step="0.5" value="25">
+        <label>右髖外展角度 <b id="v9a"></b></label><input type="range" id="s9a" min="0" max="35" step="1" value="12">
+        <label class="chk"><input type="checkbox" id="k9gt"> 錯誤示範：直接用「大轉子光標」當髖關節</label>
+      </div>
+      <div id="lcsCtl" class="ctrl" style="display:none">
+        <label class="chk"><input type="checkbox" id="k9p" checked> 大腿擺動</label>
+      </div>
+    </div>
+    <div class="card"><div class="readout" id="r9"></div></div>
+    <div class="card plain" id="p9"></div>
+  </div>
+</section>
+
+<!-- 11 質心 -->
+<section class="panel">
+  <div class="stage"><canvas id="c10"></canvas></div>
+  <div class="side">
+    <div class="card">
+      <div class="formula">x<sub>CM</sub> = Σ(m<sub>i</sub>·x<sub>i</sub>) / M<small>每個肢段的質量 × 位置，加總後除以總質量</small></div>
+      <div class="readout" id="r10"></div>
+    </div>
+    <div class="card ctrl">
+      <label>下蹲深度 <b id="v10"></b></label><input type="range" id="s10" min="0" max="100" value="50">
+      <label class="chk"><input type="checkbox" id="k10p" checked> 自動播放</label>
+      <label class="chk"><input type="checkbox" id="k10s" checked> 顯示各肢段質心</label>
+      <label>體重 <b id="v10m"></b></label><input type="range" id="s10m" min="40" max="100" step="1" value="65">
+    </div>
+    <div class="card"><h3>人體測計參數（Dempster／Winter）</h3><table class="t">
+      <tr><th>肢段</th><th>質量比</th><th>質心位置（距近端）</th></tr>
+      <tr><td>頭頸</td><td>8.1%</td><td>頭部中心</td></tr><tr><td>軀幹</td><td>49.7%</td><td>肩→髖 50%</td></tr>
+      <tr><td>上臂</td><td>2.8%</td><td>肩→肘 43.6%</td></tr><tr><td>前臂</td><td>1.6%</td><td>肘→腕 43.0%</td></tr><tr><td>手</td><td>0.6%</td><td>腕→指 50.6%</td></tr>
+      <tr><td>大腿</td><td>10.0%</td><td>髖→膝 43.3%</td></tr><tr><td>小腿</td><td>4.65%</td><td>膝→踝 43.3%</td></tr><tr><td>足</td><td>1.45%</td><td>跟→趾 50%</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- 12 3D 重建 -->
+<section class="panel">
+  <div class="stage"><canvas id="c11"></canvas></div>
+  <div class="side">
+    <div class="card ctrl">
+      <label>兩台攝影機夾角 <b id="v11a"></b></label><input type="range" id="s11a" min="10" max="170" step="1" value="90">
+      <label>每台攝影機的量測誤差 <b id="v11n"></b></label><input type="range" id="s11n" min="0" max="1" step="0.05" value="0.3">
+      <label class="chk"><input type="checkbox" id="k11one"> 只用一台攝影機</label>
+      <div class="src">可在畫面中拖曳紅色光標</div>
+    </div>
+    <div class="card"><div class="readout" id="r11"></div></div>
+    <div class="card plain"><b>為什麼一台攝影機不夠？</b>一台攝影機只知道光標在「哪一條視線上」，不知道多遠（深度）。<br><b>三角測量：</b>兩台攝影機各給一條視線，交會點就是光標的 3D 位置。<br><b>DLT（直接線性轉換）：</b>先拍一個已知座標的<b>校正框架</b>，每台攝影機求出 11 個參數，描述「3D 座標 → 畫面像素」的關係；之後就能把兩台的像素座標反推回 3D。</div>
+    <div class="card ask"><b>課堂提問：</b>把兩台攝影機的夾角調到 15°，誤差往哪個方向變大？為什麼實驗室常把攝影機擺成約 90°？</div>
+  </div>
+</section>
+
+<script>
+const TAU=Math.PI*2,DEG=180/Math.PI,RAD=Math.PI/180;
+const C={ink:'#1f3a56',muted:'#5d6b7a',line:'#d5dee7',blue:'#3a72b8',green:'#4f8a6e',orange:'#c8743f',purple:'#7a68a8',red:'#c0504d',teal:'#3f8f8a',skel:'#2fd1c4'};
+const FONT='"Noto Sans TC","Microsoft JhengHei",sans-serif';
+const $=id=>document.getElementById(id);
+const f=(x,d=1)=>(Math.abs(x)<0.5*Math.pow(10,-d)?0:x).toFixed(d);
+function fit(cv){const dpr=window.devicePixelRatio||1,r=cv.getBoundingClientRect();const W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,r.width,r.height);return [c,r.width,r.height];}
+function line(c,x1,y1,x2,y2,col,w,dash){c.save();c.strokeStyle=col;c.lineWidth=w||2;c.lineCap='round';if(dash)c.setLineDash(dash);c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();c.restore();}
+function arrow(c,x1,y1,x2,y2,col,w){const L=Math.hypot(x2-x1,y2-y1);if(L<3)return;const a=Math.atan2(y2-y1,x2-x1),h=Math.min(13,L*.45);line(c,x1,y1,x2-Math.cos(a)*h*.6,y2-Math.sin(a)*h*.6,col,w||3);c.save();c.fillStyle=col;c.beginPath();c.moveTo(x2,y2);c.lineTo(x2-h*Math.cos(a-.42),y2-h*Math.sin(a-.42));c.lineTo(x2-h*Math.cos(a+.42),y2-h*Math.sin(a+.42));c.closePath();c.fill();c.restore();}
+function dot(c,x,y,r,fill,stroke,sw){c.save();c.beginPath();c.arc(x,y,r,0,TAU);if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.lineWidth=sw||2;c.strokeStyle=stroke;c.stroke();}c.restore();}
+function text(c,s,x,y,col,size,align,weight){c.save();c.fillStyle=col||C.ink;c.font=`${weight||500} ${size||14}px ${FONT}`;c.textAlign=align||'center';c.textBaseline='middle';c.fillText(s,x,y);c.restore();}
+function pill(c,s,x,y,col,size,bg){size=size||13;c.save();c.font=`600 ${size}px ${FONT}`;const w=c.measureText(s).width+14,h=size+10;c.fillStyle=bg||'rgba(255,255,255,.93)';c.strokeStyle=col;c.lineWidth=1.5;c.beginPath();c.roundRect(x-w/2,y-h/2,w,h,h/2);c.fill();c.stroke();c.fillStyle=col;c.textAlign='center';c.textBaseline='middle';c.fillText(s,x,y+.5);c.restore();}
+function rows(el,arr){const h=arr.map(([k,v])=>`<span>${k}</span><b>${v}</b>`).join('');if(el._h!==h){el.innerHTML=h;el._h=h;}}
+function setHTML(el,h){if(el._h!==h){el.innerHTML=h;el._h=h;}}
+function ptr(cv,e){const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];}
+function group(id,cb){const g=$(id);g.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{g.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b));cb(b.dataset.m);});}
+function nice(span,n){const raw=span/n;const p=Math.pow(10,Math.floor(Math.log10(raw)));const m=raw/p;return (m<1.5?1:m<3?2:m<7?5:10)*p;}
+const fmtTick=v=>{const a=Math.abs(v);return a<1e-9?'0':(a>=10?v.toFixed(0):a>=1?(+v.toFixed(1)).toString():(+v.toFixed(2)).toString());};
+function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v);}
+function angle3(a,b,c){const v1=[a[0]-b[0],a[1]-b[1]],v2=[c[0]-b[0],c[1]-b[1]];const d=v1[0]*v2[0]+v1[1]*v2[1],m=Math.hypot(...v1)*Math.hypot(...v2);return Math.acos(Math.max(-1,Math.min(1,d/m)))*DEG;}
+class G{
+  constructor(x,y,w,h,t0,t1,y0,y1){Object.assign(this,{x,y,w,h,t0,t1,y0,y1});}
+  X(t){return this.x+(t-this.t0)/(this.t1-this.t0)*this.w}
+  Y(v){return this.y+this.h-(v-this.y0)/(this.y1-this.y0)*this.h}
+  axes(c,yl,col,xl){const {x,y,w,h,t0,t1,y0,y1}=this;c.save();c.fillStyle='#fbfcfd';c.fillRect(x,y,w,h);
+    const sx=nice(t1-t0,5),sy=nice(y1-y0,4);
+    for(let i=Math.ceil(t0/sx);i*sx<=t1+1e-9;i++){const X=this.X(i*sx);line(c,X,y,X,y+h,'#e8edf2',1);text(c,fmtTick(i*sx),X,y+h+11,'#8a99a8',11);}
+    for(let i=Math.ceil(y0/sy);i*sy<=y1+1e-9;i++){const Y=this.Y(i*sy);line(c,x,Y,x+w,Y,'#e8edf2',1);text(c,fmtTick(i*sy),x-6,Y,'#8a99a8',11,'right');}
+    c.strokeStyle='#cfd8e1';c.lineWidth=1;c.strokeRect(x,y,w,h);c.restore();
+    if(yl)text(c,yl,x+8,y+12,col||C.ink,13,'left',700);if(xl)text(c,xl,x+w,y+h+25,'#8a99a8',12,'right');}
+  clip(c){c.save();c.beginPath();c.rect(this.x,this.y,this.w,this.h);c.clip();}
+  plot(c,fn,ta,tb,col,w,dash){this.clip(c);c.strokeStyle=col;c.lineWidth=w||2.5;if(dash)c.setLineDash(dash);c.beginPath();const n=200;for(let i=0;i<=n;i++){const t=ta+(tb-ta)*i/n,X=this.X(t),Y=this.Y(fn(t));i?c.lineTo(X,Y):c.moveTo(X,Y);}c.stroke();c.restore();}
+}
+
+/* ---------- 人形與關鍵點 ---------- */
+// 正面人形：畫面左邊＝受試者的右邊（r），畫面右邊＝左邊（l）
+function frontFig(cx,footY,H,o){
+  o=Object.assign({aL:0,aR:0,eL:0,eR:0,sq:0},o||{});
+  const P={},r=H*.065,dy=o.sq*H*.17,hy=footY-H*.92+dy;P.H=H;P.r=r;P.head=[cx,hy];
+  P.nose=[cx,hy+r*.25];P.leye=[cx+r*.38,hy-r*.08];P.reye=[cx-r*.38,hy-r*.08];P.lear=[cx+r*.95,hy+r*.05];P.rear=[cx-r*.95,hy+r*.05];
+  P.leyei=[cx+r*.2,hy-r*.08];P.leyeo=[cx+r*.56,hy-r*.08];P.reyei=[cx-r*.2,hy-r*.08];P.reyeo=[cx-r*.56,hy-r*.08];P.lmouth=[cx+r*.3,hy+r*.58];P.rmouth=[cx-r*.3,hy+r*.58];
+  const shY=footY-H*.80+dy;P.lsh=[cx+H*.12,shY];P.rsh=[cx-H*.12,shY];
+  const hipY=footY-H*.50+dy;P.lhip=[cx+H*.075,hipY];P.rhip=[cx-H*.075,hipY];
+  const knY=footY-H*.27+o.sq*H*.05,kx=H*.08+o.sq*H*.08;P.lkn=[cx+kx,knY];P.rkn=[cx-kx,knY];
+  P.lank=[cx+H*.08,footY-H*.04];P.rank=[cx-H*.08,footY-H*.04];
+  for(const [s,k,a,e] of [[1,'l',o.aL,o.eL],[-1,'r',o.aR,o.eR]]){
+    const sh=P[k+'sh'],A=a*RAD,A2=(a+e)*RAD;
+    const el=[sh[0]+s*Math.sin(A)*H*.18,sh[1]+Math.cos(A)*H*.18],d=[s*Math.sin(A2),Math.cos(A2)];
+    const wr=[el[0]+d[0]*H*.16,el[1]+d[1]*H*.16];P[k+'el']=el;P[k+'wr']=wr;
+    P[k+'idx']=[wr[0]+d[0]*H*.055,wr[1]+d[1]*H*.055];P[k+'pin']=[wr[0]+d[0]*H*.045+d[1]*H*.018*s,wr[1]+d[1]*H*.045-d[0]*H*.018*s];P[k+'thb']=[wr[0]+d[0]*H*.03-d[1]*H*.022*s,wr[1]+d[1]*H*.03+d[0]*H*.022*s];
+    const an=P[k+'ank'];P[k+'heel']=[an[0],footY];P[k+'foot']=[an[0]+s*H*.035,footY+H*.004];
+  }
+  return P;
+}
+// 側面深蹲人形（面向右），近側＝左側（l）
+function sideFig(ax,g,H,u){
+  const L=H*.245,Lt=H*.28,fs=(90-38*u)*RAD,ft=(90+75*u)*RAD,fk=(90-35*u)*RAD,am=(-90+80*u)*RAD;
+  const P={},A=[ax,g-H*.04],K=[A[0]+L*Math.cos(fs),A[1]-L*Math.sin(fs)],Hp=[K[0]+L*Math.cos(ft),K[1]-L*Math.sin(ft)],S=[Hp[0]+Lt*Math.cos(fk),Hp[1]-Lt*Math.sin(fk)];
+  const hd=[S[0]+H*.1*Math.cos(fk)+H*.02,S[1]-H*.1*Math.sin(fk)],r=H*.065;
+  const E=[S[0]+H*.18*Math.cos(am),S[1]-H*.18*Math.sin(am)],W=[E[0]+H*.16*Math.cos(am),E[1]-H*.16*Math.sin(am)];
+  P.H=H;P.r=r;P.head=hd;
+  P.nose=[hd[0]+r*.95,hd[1]+r*.15];P.leye=[hd[0]+r*.6,hd[1]-r*.15];P.leyei=[hd[0]+r*.72,hd[1]-r*.15];P.leyeo=[hd[0]+r*.45,hd[1]-r*.15];P.lear=[hd[0]-r*.1,hd[1]];P.lmouth=[hd[0]+r*.7,hd[1]+r*.5];
+  P.lsh=S;P.lel=E;P.lwr=W;P.lhip=Hp;P.lkn=K;P.lank=A;P.lheel=[A[0]-H*.035,g];P.lfoot=[A[0]+H*.09,g];
+  P.lidx=[W[0]+H*.055*Math.cos(am),W[1]-H*.055*Math.sin(am)];P.lpin=[P.lidx[0]-H*.01,P.lidx[1]+H*.012];P.lthb=[W[0]+H*.03*Math.cos(am),W[1]-H*.03*Math.sin(am)-H*.02];
+  const off=[H*.018,-H*.012];for(const k of ['eye','eyei','eyeo','ear','mouth','sh','el','wr','hip','kn','ank','heel','foot','idx','pin','thb'])P['r'+k]=[P['l'+k][0]+off[0],P['l'+k][1]+off[1]];
+  P.knee=angle3(Hp,K,A);P.hipA=angle3(S,Hp,K);P.trunk=Math.atan2(S[0]-Hp[0],Hp[1]-S[1])*DEG;
+  return P;
+}
+const COCO=['nose','leye','reye','lear','rear','lsh','rsh','lel','rel','lwr','rwr','lhip','rhip','lkn','rkn','lank','rank'];
+const MP=['nose','leyei','leye','leyeo','reyei','reye','reyeo','lear','rear','lmouth','rmouth','lsh','rsh','lel','rel','lwr','rwr','lpin','rpin','lidx','ridx','lthb','rthb','lhip','rhip','lkn','rkn','lank','rank','lheel','rheel','lfoot','rfoot'];
+const ZH={nose:'鼻子',leye:'左眼',reye:'右眼',lear:'左耳',rear:'右耳',lsh:'左肩',rsh:'右肩',lel:'左肘',rel:'右肘',lwr:'左腕',rwr:'右腕',lhip:'左髖',rhip:'右髖',lkn:'左膝',rkn:'右膝',lank:'左踝',rank:'右踝',leyei:'左眼內側',leyeo:'左眼外側',reyei:'右眼內側',reyeo:'右眼外側',lmouth:'嘴角左',rmouth:'嘴角右',lpin:'左小指',rpin:'右小指',lidx:'左食指',ridx:'右食指',lthb:'左拇指',rthb:'右拇指',lheel:'左腳跟',rheel:'右腳跟',lfoot:'左腳尖',rfoot:'右腳尖'};
+const EN={nose:'nose',leye:'left_eye',reye:'right_eye',lear:'left_ear',rear:'right_ear',lsh:'left_shoulder',rsh:'right_shoulder',lel:'left_elbow',rel:'right_elbow',lwr:'left_wrist',rwr:'right_wrist',lhip:'left_hip',rhip:'right_hip',lkn:'left_knee',rkn:'right_knee',lank:'left_ankle',rank:'right_ankle',leyei:'left_eye_inner',leyeo:'left_eye_outer',reyei:'right_eye_inner',reyeo:'right_eye_outer',lmouth:'mouth_left',rmouth:'mouth_right',lpin:'left_pinky',rpin:'right_pinky',lidx:'left_index',ridx:'right_index',lthb:'left_thumb',rthb:'right_thumb',lheel:'left_heel',rheel:'right_heel',lfoot:'left_foot_index',rfoot:'right_foot_index'};
+const E_BODY=[['lsh','rsh'],['lsh','lel'],['lel','lwr'],['rsh','rel'],['rel','rwr'],['lsh','lhip'],['rsh','rhip'],['lhip','rhip'],['lhip','lkn'],['lkn','lank'],['rhip','rkn'],['rkn','rank']];
+const E_COCO=E_BODY.concat([['nose','leye'],['nose','reye'],['leye','lear'],['reye','rear']]);
+const E_MP=E_BODY.concat([['lwr','lpin'],['lwr','lidx'],['lpin','lidx'],['lwr','lthb'],['rwr','rpin'],['rwr','ridx'],['rpin','ridx'],['rwr','rthb'],['lank','lheel'],['lheel','lfoot'],['lank','lfoot'],['rank','rheel'],['rheel','rfoot'],['rank','rfoot'],['nose','leyei'],['leyei','leye'],['leye','leyeo'],['leyeo','lear'],['nose','reyei'],['reyei','reye'],['reye','reyeo'],['reyeo','rear'],['lmouth','rmouth']]);
+function drawFront(c,P,cloth,skin,alpha){
+  const H=P.H;c.save();if(alpha!=null)c.globalAlpha=alpha;skin=skin||'#e7c3a6';
+  const L=(a,b,w,col)=>line(c,P[a][0],P[a][1],P[b][0],P[b][1],col,w);
+  L('lhip','lkn',H*.075,'#3d4450');L('lkn','lank',H*.065,'#3d4450');L('rhip','rkn',H*.075,'#3d4450');L('rkn','rank',H*.065,'#3d4450');
+  L('lank','lfoot',H*.045,'#e9ecef');L('rank','rfoot',H*.045,'#e9ecef');
+  c.fillStyle=cloth;c.strokeStyle=cloth;c.lineWidth=H*.05;c.lineJoin='round';c.beginPath();c.moveTo(...P.lsh);c.lineTo(...P.rsh);c.lineTo(...P.rhip);c.lineTo(...P.lhip);c.closePath();c.fill();c.stroke();
+  line(c,P.head[0],P.head[1]+P.r,P.head[0],P.lsh[1],skin,H*.045);
+  L('lsh','lel',H*.055,cloth);L('lel','lwr',H*.045,skin);L('rsh','rel',H*.055,cloth);L('rel','rwr',H*.045,skin);
+  dot(c,P.lwr[0],P.lwr[1],H*.028,skin);dot(c,P.rwr[0],P.rwr[1],H*.028,skin);
+  dot(c,P.head[0],P.head[1],P.r,skin);c.fillStyle='#2b2b30';c.beginPath();c.arc(P.head[0],P.head[1]-P.r*.15,P.r*1.02,Math.PI*1.05,Math.PI*1.95);c.fill();
+  c.restore();
+}
+function drawSide(c,P,cloth,skin){
+  const H=P.H;skin=skin||'#e7c3a6';const L=(a,b,w,col)=>line(c,P[a][0],P[a][1],P[b][0],P[b][1],col,w);
+  L('rhip','rkn',H*.075,'#5a6170');L('rkn','rank',H*.065,'#5a6170');L('rsh','rel',H*.05,'#7d7393');L('rel','rwr',H*.042,'#cfae94');
+  L('lheel','lfoot',H*.045,'#e9ecef');L('lhip','lkn',H*.085,'#3d4450');L('lkn','lank',H*.07,'#3d4450');
+  line(c,P.lhip[0],P.lhip[1],P.lsh[0],P.lsh[1],cloth,H*.13);
+  line(c,P.lsh[0],P.lsh[1],P.head[0],P.head[1],skin,H*.045);
+  L('lsh','lel',H*.055,cloth);L('lel','lwr',H*.045,skin);dot(c,P.lwr[0],P.lwr[1],H*.028,skin);
+  dot(c,P.head[0],P.head[1],P.r,skin);c.fillStyle='#2b2b30';c.beginPath();c.arc(P.head[0]-P.r*.15,P.head[1]-P.r*.1,P.r*1.02,Math.PI*.95,Math.PI*1.85);c.fill();
+}
+function drawSkel(c,P,set,col,rad,alpha){
+  const names=set==='mp'?MP:COCO,edges=set==='mp'?E_MP:E_COCO;c.save();if(alpha!=null)c.globalAlpha=alpha;
+  edges.forEach(([a,b])=>{if(P[a]&&P[b])line(c,P[a][0],P[a][1],P[b][0],P[b][1],col,2.5);});
+  names.forEach(n=>{if(P[n])dot(c,P[n][0],P[n][1],rad||4,'#fff',col,2);});c.restore();
+}
+
+/* ====== 1 像素與解析度 ====== */
+const RES=[[48,27],[96,54],[192,108],[384,216],[640,360],[1280,720],[1920,1080]];
+const M0={ri:3,t:0};const oc0=document.createElement('canvas');
+$('s0').oninput=e=>M0.ri=+e.target.value;
+function scene0(x,P){
+  x.fillStyle='#dfe6ec';x.fillRect(0,0,1600,900);x.fillStyle='#cbd5de';x.fillRect(1180,120,300,420);x.fillStyle='#eef3f6';x.fillRect(1200,140,260,380);
+  x.fillStyle='#c9b9a6';x.fillRect(0,700,1600,200);x.strokeStyle='#b8a690';x.lineWidth=3;for(let i=0;i<8;i++){x.beginPath();x.moveTo(i*240-200,900);x.lineTo(800+(i*240-1000)*.35,700);x.stroke();}
+  x.fillStyle='#7a9aa8';x.beginPath();x.ellipse(800,840,240,22,0,0,TAU);x.fill();
+  drawFront(x,P,'#5b6e8f');
+}
+function draw0(dt){
+  const [c,w,h]=fit($('c0'));M0.t+=dt;const [rw,rh]=RES[M0.ri];
+  if(oc0.width!==rw||oc0.height!==rh){oc0.width=rw;oc0.height=rh;}
+  const x=oc0.getContext('2d');x.setTransform(rw/1600,0,0,rw/1600,0,0);
+  const P=frontFig(800,830,620,{aL:25+110*(1-Math.cos(M0.t*.7))/2,eL:35,aR:15});scene0(x,P);
+  const dw=Math.min(w-40,(h-80)*16/9),dh=dw*9/16,dx=20,dy=56;
+  c.imageSmoothingEnabled=false;c.drawImage(oc0,0,0,rw,rh,dx,dy,dw,dh);c.strokeStyle='#cfd8e1';c.strokeRect(dx,dy,dw,dh);
+  const D=p=>[dx+p[0]/1600*dw,dy+p[1]/900*dh],px=1600/rw,snap=p=>[(Math.floor(p[0]/px)+.5)*px,(Math.floor(p[1]/px)+.5)*px];
+  const S={};COCO.forEach(n=>S[n]=snap(P[n]));
+  if($('k0s').checked){
+    const T={};COCO.forEach(n=>T[n]=D(P[n]));drawSkel(c,T,'coco','#2fd1c4',3);
+    const Q={};COCO.forEach(n=>Q[n]=D(S[n]));E_COCO.forEach(([a,b])=>line(c,Q[a][0],Q[a][1],Q[b][0],Q[b][1],C.orange,2,[5,4]));COCO.forEach(n=>dot(c,Q[n][0],Q[n][1],4,C.orange));
+  }
+  // loupe
+  const n=14,ls=Math.min(200,dh*.45),lx=dx+dw-ls-12,ly=dy+12,cpx=P.lel[0]/px,cpy=P.lel[1]/px;
+  c.fillStyle='#fff';c.fillRect(lx-3,ly-3,ls+6,ls+6);c.drawImage(oc0,Math.floor(cpx)-n/2,Math.floor(cpy)-n/2,n,n,lx,ly,ls,ls);
+  for(let i=0;i<=n;i++){line(c,lx+i*ls/n,ly,lx+i*ls/n,ly+ls,'rgba(255,255,255,.55)',1);line(c,lx,ly+i*ls/n,lx+ls,ly+i*ls/n,'rgba(255,255,255,.55)',1);}
+  c.strokeStyle=C.ink;c.lineWidth=2;c.strokeRect(lx,ly,ls,ls);c.strokeStyle=C.red;c.strokeRect(lx+ls/2-ls/n/2,ly+ls/2-ls/n/2,ls/n,ls/n);
+  const [lex,ley]=D(P.lel);c.strokeStyle=C.red;c.lineWidth=1.5;c.strokeRect(lex-n*px/1600*dw/2,ley-n*px/1600*dw/2,n*px/1600*dw,n*px/1600*dw);
+  const pd=x.getImageData(Math.floor(cpx),Math.floor(cpy),1,1).data;
+  pill(c,`🔍 左肘附近 14×14 像素　中心格 RGB(${pd[0]}, ${pd[1]}, ${pd[2]})`,lx+ls/2,ly+ls+16,C.ink,12);
+  text(c,`${rw} × ${rh} 像素`,20,26,C.ink,20,'left',700);
+  if($('k0s').checked)text(c,'青色＝真實關節　橙色＝只能落在像素格中心的關鍵點',240,26,C.muted,13,'left');
+  const tA=angle3(P.lsh,P.lel,P.lwr),mA=angle3(S.lsh,S.lel,S.lwr),cm=400/rw;
+  rows($('r0'),[['總像素',(rw*rh/1e4).toFixed(rw*rh<1e5?2:0)+' 萬'],['每像素代表（畫面寬 4 m）',f(cm,cm<1?2:1)+' cm'],['單張影像大小（RGB）',f(rw*rh*3/1e6,2)+' MB'],['30 fps 每秒資料量',f(rw*rh*3*30/1e6,0)+' MB/s'],['真實左肘角',f(tA,1)+'°'],['像素化後量到',f(mA,1)+'°'],['誤差',f(Math.abs(tA-mA),1)+'°']]);
+  $('v0').textContent=`${rw}×${rh}`;
+}
+
+/* ====== 2 幀率與快門 ====== */
+const FPS=[15,30,60,120,240],SHUT=[1/30,1/60,1/250,1/500,1/1000,1/2000],SHUTL=['1/30','1/60','1/250','1/500','1/1000','1/2000'];
+const M1={m:'kick',fi:1,si:1,tp:0,rps:3.5,wk:0,wt:0};
+group('m1',m=>{M1.m=m;$('kickCtl').style.display=m==='kick'?'':'none';$('wheelCtl').style.display=m==='wheel'?'':'none';});
+$('s1f').oninput=e=>M1.fi=+e.target.value;$('s1s').oninput=e=>M1.si=+e.target.value;$('s1r').oninput=e=>M1.rps=+e.target.value;
+const KT=.35,KD=130*RAD,KL=.9,SLOW=12;
+const kphi=t=>(-130*RAD)+KD*(1-Math.cos(Math.PI*Math.min(Math.max(t,0),KT)/KT))/2;
+const kspeed=t=>KL*KD*Math.PI/(2*KT)*Math.sin(Math.PI*t/KT);
+function draw1(dt){
+  const [c,w,h]=fit($('c1'));const fps=FPS[M1.fi];
+  if(M1.m==='kick'){
+    M1.tp+=dt;const cyc=KT*SLOW+1.6;if(M1.tp>cyc)M1.tp=0;const t=Math.min(M1.tp/SLOW,KT);
+    const hx=w*.27,hy=h*.42,Lp=Math.min(h*.4,w*.22);const foot=q=>{const p=kphi(q);return [hx+Lp*Math.cos(p),hy-Lp*Math.sin(p)];};
+    // body
+    line(c,hx,hy,hx+10,hy-h*.22,'#9aa3b4',26);dot(c,hx+14,hy-h*.27,h*.05,'#e7c3a6');line(c,hx-Lp*.15,hy,hx-Lp*.1,hy+Lp,'#c3c8d2',16);
+    c.save();c.strokeStyle='rgba(58,114,184,.25)';c.setLineDash([4,5]);c.lineWidth=2;c.beginPath();for(let i=0;i<=40;i++){const q=foot(KT*i/40);i?c.lineTo(...q):c.moveTo(...q);}c.stroke();c.restore();
+    const frames=[];for(let k=0;k/fps<=KT+1e-9;k++)frames.push(k/fps);
+    frames.filter(q=>q<=t).forEach(q=>{const p=foot(q);line(c,hx,hy,p[0],p[1],'rgba(200,116,63,.35)',4);dot(c,p[0],p[1],6,C.orange,'#fff');});
+    const fp=foot(t);line(c,hx,hy,fp[0],fp[1],'#3d4450',14);dot(c,hx,hy,7,'#fff',C.ink);dot(c,fp[0],fp[1],8,'#3d4450');
+    text(c,`${fps} fps：整個踢腿（${KT} 秒）只拍到 ${frames.length} 張`,20,26,C.ink,18,'left',700);text(c,`慢動作播放 ×1/${SLOW}`,20,50,C.muted,13,'left');
+    // speed graph
+    const g=new G(w*.56,40,w*.4,h*.38,0,KT,0,10);g.axes(c,'腳尖速度 (m/s)',C.blue,'時間 (s)');g.plot(c,kspeed,0,KT,'#9aa8b6',2.5,[5,4]);
+    let pk=0;g.clip(c);c.strokeStyle=C.orange;c.lineWidth=2.5;c.beginPath();let st=false;
+    for(let i=1;i<frames.length;i++){const a=frames[i-1],b=frames[i];const pa=foot(a),pb=foot(b);const v=Math.hypot(pb[0]-pa[0],pb[1]-pa[1])/Lp*KL/(b-a);pk=Math.max(pk,v);const X=g.X((a+b)/2),Y=g.Y(v);st?c.lineTo(X,Y):c.moveTo(X,Y);st=true;}
+    c.stroke();c.restore();for(let i=1;i<frames.length;i++){const a=frames[i-1],b=frames[i];const pa=foot(a),pb=foot(b);const v=Math.hypot(pb[0]-pa[0],pb[1]-pa[1])/Lp*KL/(b-a);dot(c,g.X((a+b)/2),g.Y(v),3.5,C.orange);}
+    line(c,g.X(t),g.y,g.X(t),g.y+g.h,C.ink,1,[3,3]);
+    text(c,'虛線＝真實速度　橙線＝由影格算出的速度',g.x+g.w,g.y+g.h+40,C.muted,12,'right');
+    // blur frame
+    const bx=w*.56,by=h*.56,bw=w*.4,bh=h*.4,sh=SHUT[M1.si];const last=frames.filter(q=>q<=t).pop()||0;
+    c.fillStyle='#eef2f5';c.fillRect(bx,by,bw,bh);c.strokeStyle='#cfd8e1';c.strokeRect(bx,by,bw,bh);
+    const s2=bh*.8/Lp*.95,hx2=bx+bw*.3,hy2=by+bh*.12;
+    for(let i=0;i<=16;i++){const q=last-sh+sh*i/16,p=kphi(q);line(c,hx2,hy2,hx2+Lp*s2*Math.cos(p),hy2-Lp*s2*Math.sin(p),'rgba(61,68,80,.09)',14);}
+    const blur=kspeed(last)*sh*100;
+    text(c,`最新一張影格（快門 ${SHUTL[M1.si]} 秒）`,bx+10,by+16,C.ink,13,'left',700);text(c,`曝光期間腳尖移動 ${f(blur,1)} cm → ${blur>3?'明顯模糊':'清晰'}`,bx+10,by+bh-14,blur>3?C.red:C.green,13,'left',600);
+    rows($('r1'),[['幀率',fps+' fps（每 '+f(1000/fps,1)+' ms 一張）'],['踢腿期間影格數',frames.length+' 張'],['真實最高速度',f(kspeed(KT/2),2)+' m/s'],['影格算出最高速度',f(pk,2)+' m/s'],['低估',f((1-pk/kspeed(KT/2))*100,0)+' %'],['快門速度',SHUTL[M1.si]+' 秒']]);
+    setHTML($('p1'),'<b>幀率（FPS）</b>＝每秒拍幾張。動作越快，越需要高幀率，否則兩張之間「錯過」了最快的瞬間，算出的速度會偏低。<br><b>快門</b>＝每一張曝光多久。快門太慢，快速移動的肢體會拖出殘影，AI 找不到清楚的關節。<br>一般步態 30–60 fps 即可；踢球、揮拍、投擲建議 120 fps 以上。');
+    $('v1s').textContent=SHUTL[M1.si]+' 秒';
+  }else{
+    M1.wt+=dt;if(M1.wt>.14){M1.wt=0;M1.wk++;}
+    const step=360*M1.rps/fps,ang=(M1.wk*step)%360,spoke=45;let app=((step%spoke)+spoke)%spoke;if(app>spoke/2)app-=spoke;
+    const cx=w*.5,cy=h*.55,R=Math.min(w,h)*.3;
+    c.strokeStyle='#3d4450';c.lineWidth=10;c.beginPath();c.arc(cx,cy,R,0,TAU);c.stroke();
+    for(let k=0;k<8;k++){const q=(ang+k*45)*RAD;line(c,cx,cy,cx+R*Math.cos(q),cy+R*Math.sin(q),k===0&&$('k1m').checked?C.red:'#7d8796',k===0&&$('k1m').checked?6:4);}
+    dot(c,cx,cy,12,'#fff',C.ink);
+    text(c,`攝影機畫面（${fps} fps，每格慢速播放）`,20,26,C.ink,18,'left',700);
+    const look=Math.abs(app)<.5?'看起來幾乎不動！':app>0?'看起來順時針慢慢轉':'看起來在「倒轉」！';
+    pill(c,look,cx,cy+R+38,Math.abs(app)<.5||app<0?C.red:C.green,16);
+    const need=M1.rps*8*2;
+    rows($('r1'),[['真實轉速',f(M1.rps,2)+' 圈/秒'],['每張影格之間實際轉了',f(step,1)+'°'],['輪輻每 45° 長得一樣','（8 根輪輻）'],['眼睛看到的每格轉動',(app>0?'+':'')+f(app,1)+'°'],['要正確拍到需要 ≥',f(need,0)+' fps']]);
+    setHTML($('p1'),'<b>混疊（aliasing）：</b>拍攝頻率不夠高時，快速重複的動作會被「看錯」— 變慢、靜止，甚至倒轉（電影裡的車輪效應）。<br><b>取樣定理：</b>幀率至少要是動作重複頻率的 2 倍以上。標成紅色的輪輻能讓你看出真正轉了多少。');
+  }
+  $('v1f').textContent=fps+' fps';$('v1r').textContent=M1.rps+' 圈/秒';
+}
+
+/* ====== 3 光學與焦距 ====== */
+const M2={m:'lens',do:16,f:5,fl:26,d:3.5};
+group('m2',m=>{M2.m=m;$('lensCtl').style.display=m==='lens'?'':'none';$('fovCtl').style.display=m==='fov'?'':'none';});
+$('s2o').oninput=e=>M2.do=+e.target.value;$('s2f').oninput=e=>M2.f=+e.target.value;$('s2l').oninput=e=>M2.fl=+e.target.value;$('s2d').oninput=e=>M2.d=+e.target.value;
+function draw2(){
+  const [c,w,h]=fit($('c2'));
+  if(M2.m==='lens'){
+    const lx=w*.45,ay=h*.55,S=(w*.4)/32,F=M2.f,dO=M2.do,dI=1/(1/F-1/dO),m=-dI/dO,ho=4;
+    line(c,20,ay,w-20,ay,'#c5d0db',1.5);
+    c.save();c.fillStyle='rgba(58,114,184,.15)';c.strokeStyle=C.blue;c.lineWidth=2;c.beginPath();c.ellipse(lx,ay,10,h*.32,0,0,TAU);c.fill();c.stroke();c.restore();
+    [[-F,'F'],[F,'F']].forEach(([x,s])=>{dot(c,lx+x*S,ay,4,C.ink);text(c,s,lx+x*S,ay+16,C.ink,13,'center',700);});
+    const O=[lx-dO*S,ay],OT=[lx-dO*S,ay-ho*S],I=[lx+dI*S,ay],IT=[lx+dI*S,ay-m*ho*S];
+    arrow(c,...O,...OT,C.green,5);text(c,'物體（人）',OT[0],OT[1]-14,C.green,14,'center',700);
+    c.save();c.beginPath();c.rect(0,0,w,h);c.clip();
+    line(c,...OT,lx,OT[1],C.orange,2);line(c,lx,OT[1],IT[0],IT[1],C.orange,2);
+    line(c,...OT,...IT,C.purple,2);
+    line(c,...OT,lx,IT[1],C.teal,2);line(c,lx,IT[1],IT[0],IT[1],C.teal,2);
+    c.restore();
+    if(IT[0]<w-10){arrow(c,...I,...IT,C.red,5);text(c,'倒立的影像',IT[0],IT[1]+(m<0?18:-14),C.red,14,'center',700);
+      line(c,I[0],ay-h*.28,I[0],ay+h*.28,'rgba(122,104,168,.6)',6);text(c,'感光元件（像素陣列）',I[0],ay-h*.3-12,C.purple,13,'center',700);}
+    else text(c,'影像位置太遠（物體太靠近焦點）',w-20,ay-40,C.red,14,'right',700);
+    text(c,'凸透鏡成像：光線穿過鏡頭，在後方聚成「倒立的實像」',20,26,C.ink,17,'left',700);
+    text(c,'1/f = 1/物距 + 1/像距',20,50,C.muted,14,'left');
+    rows($('r2'),[['焦距 f',f(F,1)+' cm'],['物距',f(dO,1)+' cm'],['像距（感光元件要放的位置）',f(dI,2)+' cm'],['放大率',f(Math.abs(m),2)+' 倍（倒立）']]);
+    setHTML($('p2'),'<b>相機原理：</b>鏡頭把光線聚在感光元件上，形成倒立的小影像；感光元件上排滿了數百萬個感光點，每一點就是一個<b>像素</b>。<br><b>對焦</b>＝調整鏡頭位置，讓影像剛好落在感光元件上。物體遠近改變時，成像位置也跟著改變。');
+  }else{
+    const fl=M2.fl,d=M2.d,hf=2*Math.atan(36/(2*fl)),vf=2*Math.atan(24/(2*fl)),Wd=2*d*Math.tan(hf/2),Hd=2*d*Math.tan(vf/2),pH=1.75,frac=pH/Hd;
+    // top view
+    const tw=w*.42,cx=tw*.5+10,cy=h-40,S=(h-110)/13;
+    c.fillStyle='#f7f9fb';c.fillRect(10,60,tw,h-80);text(c,'俯視圖',20,76,C.muted,13,'left',700);
+    c.save();c.fillStyle='rgba(58,114,184,.12)';c.beginPath();c.moveTo(cx,cy);c.lineTo(cx-Math.tan(hf/2)*13*S,cy-13*S);c.lineTo(cx+Math.tan(hf/2)*13*S,cy-13*S);c.closePath();c.fill();c.restore();
+    line(c,cx,cy,cx-Math.tan(hf/2)*13*S,cy-13*S,C.blue,1.5);line(c,cx,cy,cx+Math.tan(hf/2)*13*S,cy-13*S,C.blue,1.5);
+    c.fillStyle=C.ink;c.fillRect(cx-12,cy-6,24,14);
+    for(let m=2;m<=12;m+=2){line(c,cx-tw*.45,cy-m*S,cx-tw*.4,cy-m*S,'#b8c4cf',1);text(c,m+' m',cx-tw*.45+4,cy-m*S-8,'#9aa8b6',10,'left');}
+    dot(c,cx,cy-d*S,Math.max(5,.25*S),'#5b6e8f');line(c,cx-Wd/2*S,cy-d*S,cx+Wd/2*S,cy-d*S,C.orange,2,[4,3]);text(c,`畫面寬 ${f(Wd,1)} m`,cx,cy-d*S-14,C.orange,12,'center',700);
+    // preview
+    const px=tw+30,pw=w-px-20,ph=Math.min(pw*2/3,h-120),py=70;
+    c.fillStyle='#dfe6ec';c.fillRect(px,py,pw,ph);c.fillStyle='#c9b9a6';c.fillRect(px,py+ph*.5+ph*frac*.5,pw,ph);
+    c.save();c.beginPath();c.rect(px,py,pw,ph);c.clip();
+    const Hpx=ph*frac,foot=py+ph/2+Hpx/2;const P=frontFig(px+pw/2,foot,Hpx,{aL:20,aR:20});drawFront(c,P,'#5b6e8f');
+    c.restore();c.strokeStyle=C.ink;c.lineWidth=2;c.strokeRect(px,py,pw,ph);
+    text(c,'攝影機看到的畫面',px,py-14,C.ink,14,'left',700);
+    let st,col;if(frac>.95){st='太近：拍不到全身！';col=C.red;}else if(frac<.35){st='太遠：人太小，關鍵點不準';col=C.orange;}else{st='合適：全身入鏡且夠大';col=C.green;}
+    pill(c,st,px+pw/2,py+ph+26,col,15);
+    const ratio=d/Math.max(d-.6,.3);
+    text(c,`焦距 ${fl} mm（${fl<24?'超廣角':fl<35?'廣角':fl<70?'標準':'望遠'}）`,20,26,C.ink,18,'left',700);
+    rows($('r2'),[['水平視角',f(hf*DEG,0)+'°'],['垂直視角',f(vf*DEG,0)+'°'],['此距離畫面寬 × 高',`${f(Wd,2)} × ${f(Hd,2)} m`],['人佔畫面高度',f(frac*100,0)+' %'],['每像素（1080p 高）',f(Hd/1080*1000,1)+' mm'],['往鏡頭伸出 60 cm 的手會被放大',f(ratio,2)+' 倍']]);
+    setHTML($('p2'),'<b>焦距短（廣角）</b>：拍得寬，可以站近一點，但近大遠小的<b>透視變形</b>更明顯、邊緣容易變形。<br><b>焦距長（望遠）</b>：視角窄，要站很遠，但透視變形小、比例較真實。<br>動作分析建議：攝影機稍微退遠、用標準焦距，讓<b>全身佔畫面約 50–80%</b>。');
+  }
+  $('v2o').textContent=M2.do+' cm';$('v2f').textContent=M2.f+' cm';$('v2l').textContent=M2.fl+' mm';$('v2d').textContent=f(M2.d,1)+' m';
+}
+
+/* ====== 4 鏡頭變形與校正 ====== */
+const M3={k:-.3,cal:-1,ct:0};
+$('s3').oninput=e=>{M3.k=+e.target.value;};
+document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{M3.k=+b.dataset.k;$('s3').value=M3.k;});
+$('b3cal').onclick=()=>{M3.cal=0;M3.ct=0;$('k3u').checked=false;};
+const AS=.5625;
+function dist3(p,k){const r2=p[0]*p[0]+p[1]*p[1];const s=1+k*r2;return [p[0]*s,p[1]*s];}
+function undist3(p,k){let q=p.slice();for(let i=0;i<20;i++){const r2=q[0]*q[0]+q[1]*q[1];q=[p[0]/(1+k*r2),p[1]/(1+k*r2)];}return q;}
+function draw3(dt){
+  const [c,w,h]=fit($('c3'));const dw=Math.min(w-40,(h-80)/AS),dh=dw*AS,ox=w/2,oy=40+dh/2;
+  const k=M3.k,und=$('k3u').checked,map=p=>{const q=und?p:dist3(p,k);return [ox+q[0]*dw/2,oy+q[1]*dw/2];};
+  c.save();c.beginPath();c.rect(ox-dw/2,oy-dh/2,dw,dh);c.clip();
+  c.fillStyle='#f4f6f8';c.fillRect(ox-dw/2,oy-dh/2,dw,dh);
+  const rc2=(!und&&k<0)?Math.pow(.97/Math.sqrt(-3*k),2):Infinity;
+  const poly=(pts,col,wd,dash)=>{c.save();c.strokeStyle=col;c.lineWidth=wd;if(dash)c.setLineDash(dash);c.beginPath();let pen=false;pts.forEach(p=>{if(p[0]*p[0]+p[1]*p[1]>rc2){pen=false;return;}const q=map(p);pen?c.lineTo(...q):c.moveTo(...q);pen=true;});c.stroke();c.restore();};
+  const seg=(a,b,n)=>Array.from({length:(n||60)+1},(_,i)=>[a[0]+(b[0]-a[0])*i/(n||60),a[1]+(b[1]-a[1])*i/(n||60)]);
+  for(let x=-1.375;x<=1.38;x+=.125)poly(seg([x,-.9],[x,.9]),'#cfd8e1',1);for(let y=-.875;y<=.88;y+=.125)poly(seg([-1.4,y],[1.4,y]),'#cfd8e1',1);
+  poly(seg([.78,-.5],[.78,.5]),C.blue,5);poly(seg([-.78,-.5],[-.78,.5]),C.blue,5);poly(seg([-1.4,.42],[1.4,.42]),'#a08870',4);
+  // person near edge, as points mapped
+  const scale=.0011;const toN=p=>[(p[0]-800)*scale+.55,(p[1]-450)*scale];const P=frontFig(800,830,620,{aL:30,aR:30});
+  const Pm={};for(const n in P)if(Array.isArray(P[n]))Pm[n]=map(toN(P[n]));Pm.H=P.H*scale*dw/2;Pm.r=P.r*scale*dw/2;drawFront(c,Pm,'#5b6e8f');
+  // measuring bars
+  const bars=[[[-.1,0],[.1,0],'中央'],[[.6,.4],[.8,.4],'角落']];const res=[];
+  bars.forEach(([a,b,n])=>{const A=map(a),B=map(b);line(c,...A,...B,C.red,5);dot(c,...A,4,C.red);dot(c,...B,4,C.red);res.push(Math.hypot(B[0]-A[0],B[1]-A[1]));});
+  // calibration animation
+  if(M3.cal>=0){M3.ct+=dt;if(M3.ct>.8){M3.ct=0;M3.cal++;}
+    const poses=[[-.6,-.25,.2],[.0,-.2,-.1],[.55,-.2,.15],[-.55,.25,-.15],[.05,.2,.05],[.6,.25,-.2]];const ni=Math.min(M3.cal,poses.length-1);
+    for(let i=0;i<=ni;i++){const [cx,cy,rot]=poses[i];const pts=[];for(let a=0;a<=6;a++)for(let b=0;b<=4;b++){const u=(a-3)*.06,v=(b-2)*.06;pts.push([cx+u*Math.cos(rot)-v*Math.sin(rot),cy+u*Math.sin(rot)+v*Math.cos(rot)]);}
+      if(i===ni&&M3.cal<poses.length){for(let a=0;a<6;a++)for(let b=0;b<4;b++){if((a+b)%2)continue;const q=[pts[a*5+b],pts[(a+1)*5+b],pts[(a+1)*5+b+1],pts[a*5+b+1]].map(p=>map(p));c.fillStyle='#222';c.beginPath();q.forEach((p,j)=>j?c.lineTo(...p):c.moveTo(...p));c.fill();}}
+      pts.forEach(p=>{const q=map(p);line(c,q[0]-4,q[1],q[0]+4,q[1],C.red,1.5);line(c,q[0],q[1]-4,q[0],q[1]+4,C.red,1.5);});}
+    if(M3.cal>=poses.length+1){M3.cal=-1;$('k3u').checked=true;}
+  }
+  c.restore();c.strokeStyle=C.ink;c.lineWidth=2;c.strokeRect(ox-dw/2,oy-dh/2,dw,dh);
+  if(und&&Math.abs(k)>.01){c.save();c.strokeStyle=C.orange;c.setLineDash([6,5]);c.lineWidth=2;c.beginPath();const B=[];for(let i=0;i<=40;i++)B.push([-1+2*i/40,-AS]);for(let i=0;i<=40;i++)B.push([1,-AS+2*AS*i/40]);for(let i=0;i<=40;i++)B.push([1-2*i/40,AS]);for(let i=0;i<=40;i++)B.push([-1,AS-2*AS*i/40]);B.forEach((p,i)=>{const q=undist3(p,k);const s=[ox+q[0]*dw/2,oy+q[1]*dw/2];i?c.lineTo(...s):c.moveTo(...s);});c.closePath();c.stroke();c.restore();text(c,'橙色虛線＝原始畫面校正後的範圍（邊緣需要裁切或補邊）',20,h-14,C.orange,12,'left');}
+  const st=M3.cal>=0?(M3.cal<6?`校正中：拍攝第 ${Math.min(M3.cal+1,6)} 張棋盤格，偵測角點…`:`計算完成：k₁ ≈ ${f(k,2)}，套用校正！`):(und?'已校正：直線恢復筆直':k<-.02?'桶形變形：邊緣直線向外彎':k>.02?'枕形變形：邊緣直線向內彎':'理想鏡頭：沒有變形');
+  text(c,st,20,22,M3.cal>=0?C.red:C.ink,16,'left',700);
+  const base=dw*.1,mC=res[0]/base,mE=res[1]/base;
+  rows($('r3'),[['k₁',f(k,2)],['中央 1 m 標尺量到',f(mC,3)+' m'],['角落 1 m 標尺量到',f(mE,3)+' m'],['角落誤差',f(Math.abs(mE-1)*100,1)+' %'],['狀態',und?'已校正':'未校正']]);
+  $('v3').textContent=f(k,2);
+}
+
+/* ====== 5 拍攝角度誤差 ====== */
+const M4={k:100,y:30,p:0};
+$('s4k').oninput=e=>M4.k=+e.target.value;$('s4y').oninput=e=>M4.y=+e.target.value;$('s4p').oninput=e=>M4.p=+e.target.value;
+function proj4(v,y,p){const x1=v[0]*Math.cos(y),z1=v[0]*Math.sin(y);return [x1,v[1]*Math.cos(p)+z1*Math.sin(p)];}
+function legPts(k){const th=k*RAD;return {hip:[-Math.sin(th)*.45,-Math.cos(th)*.45],kn:[0,0],an:[0,-.45]};}
+// knee→hip = rotate (0,-1) by θ toward back: (-sinθ, -cosθ) (y up)
+function measured4(k,y,p){const L=legPts(k);const H=proj4(L.hip,y,p),K=[0,0],A=proj4(L.an,y,p);return angle3(H,K,A);}
+function draw4(){
+  const [c,w,h]=fit($('c4'));const y=M4.y*RAD,p=M4.p*RAD;
+  // top view
+  const tx=w*.2,ty=h*.33,R=Math.min(w*.16,h*.25);
+  c.fillStyle='#f7f9fb';c.fillRect(10,40,w*.4,h*.55);text(c,'俯視圖',20,56,C.muted,13,'left',700);
+  line(c,tx-R*1.1,ty,tx+R*1.1,ty,C.green,4);text(c,'動作平面（矢狀面）',tx+R*1.1,ty-14,C.green,12,'right',700);
+  dot(c,tx,ty,10,'#5b6e8f');arrow(c,tx,ty,tx+30,ty,C.ink,2);
+  const cam=[tx+R*Math.sin(y),ty+R*Math.cos(y)];c.save();c.translate(...cam);c.rotate(-y);c.fillStyle=C.ink;c.fillRect(-14,-6,28,14);c.restore();
+  line(c,...cam,tx,ty,C.blue,2,[5,4]);text(c,`偏離 ${M4.y}°`,cam[0]+16,cam[1]+12,C.blue,13,'left',700);
+  // camera view
+  const vx=w*.44,vw=w*.54,vy=40,vh=h*.55,S=Math.min(vw,vh)*.75,cx=vx+vw/2,cy=vy+vh*.45;
+  c.fillStyle='#eef2f5';c.fillRect(vx,vy,vw,vh);c.strokeStyle=C.ink;c.lineWidth=2;c.strokeRect(vx,vy,vw,vh);text(c,'攝影機看到的（2D）',vx+10,vy+16,C.ink,13,'left',700);
+  const L=legPts(M4.k);const T=v=>{const q=proj4(v,y,p);return [cx+q[0]*S,cy-q[1]*S];};
+  const H=T(L.hip),K=T(L.kn),A=T(L.an);
+  // true (ghost, side view)
+  const Hs=[cx+L.hip[0]*S,cy-L.hip[1]*S],As=[cx,cy+.45*S];
+  line(c,...Hs,...K,'rgba(79,138,110,.3)',10);line(c,...K,...As,'rgba(79,138,110,.3)',10);
+  line(c,...H,...K,'#3d4450',12);line(c,...K,...A,'#3d4450',12);[H,K,A].forEach(q=>dot(c,...q,7,'#fff',C.teal,3));
+  const m=measured4(M4.k,y,p);
+  const a1=Math.atan2(H[1]-K[1],H[0]-K[0]),a2=Math.atan2(A[1]-K[1],A[0]-K[0]);c.save();c.strokeStyle=C.orange;c.lineWidth=3;c.beginPath();let d=a1-a2;while(d>Math.PI)d-=TAU;while(d<-Math.PI)d+=TAU;c.arc(...K,40,a2,a2+d,d<0);c.stroke();c.restore();
+  pill(c,`量到 ${f(m,1)}°`,K[0]+70,K[1]-10,C.orange,15);text(c,'淡綠＝正側面時的樣子',vx+vw-10,vy+vh-12,C.green,12,'right');
+  // graph
+  const g=new G(70,h*.66,w-100,h*.34-44,0,85,40,180);g.axes(c,'畫面上量到的膝角 (°)',C.orange,'攝影機水平偏離角 (°)');
+  g.plot(c,()=>M4.k,0,85,C.green,2,[6,4]);g.plot(c,q=>measured4(M4.k,q*RAD,p),0,85,C.orange,3);dot(c,g.X(M4.y),g.Y(m),6,C.orange,'#fff');
+  text(c,`綠色虛線＝真實 ${M4.k}°`,g.x+g.w-8,g.y+14,C.green,12,'right',600);
+  rows($('r4'),[['真實膝角',M4.k+'°'],['畫面量到',f(m,1)+'°'],['誤差',(m-M4.k>0?'+':'')+f(m-M4.k,1)+'°'],['水平偏離',M4.y+'°'],['俯角',M4.p+'°']]);
+  $('v4k').textContent=M4.k+'°';$('v4y').textContent=M4.y+'°';$('v4p').textContent=M4.p+'°';
+}
+
+/* ====== 6 光線與背景 ====== */
+const M5={e:0,n:.1,t:0};const W5=256,H5=144;const oc5=document.createElement('canvas'),om5=document.createElement('canvas');oc5.width=om5.width=W5;oc5.height=om5.height=H5;
+let NZ5=new Float32Array(W5*H5*3);for(let i=0;i<NZ5.length;i++)NZ5[i]=gauss();
+$('s5e').oninput=e=>M5.e=+e.target.value;$('s5n').oninput=e=>M5.n=+e.target.value;
+$('b5good').onclick=()=>{M5.e=0;M5.n=.05;$('s5e').value=0;$('s5n').value=.05;$('k5b').checked=$('k5c').checked=$('k5s').checked=false;};
+const KP5=[['lsh','左肩',.95],['lel','左肘',.88],['lwr','左腕',.8],['rsh','右肩',.95],['rel','右肘',.88],['rwr','右腕',.8],['lkn','左膝',.92],['rkn','右膝',.92]];
+function draw5(dt){
+  const [c,w,h]=fit($('c5'));M5.t+=dt;
+  const back=$('k5b').checked,clut=$('k5c').checked,sim=$('k5s').checked;
+  const x=oc5.getContext('2d'),m=om5.getContext('2d');const k=W5/1600;x.setTransform(k,0,0,k,0,0);m.setTransform(k,0,0,k,0,0);
+  const P=frontFig(800,830,620,{aL:30+120*(1-Math.cos(M5.t*.9))/2,eL:20,aR:25});
+  x.fillStyle='#cfd6dc';x.fillRect(0,0,1600,900);
+  if(back){x.fillStyle='#fffbe9';x.fillRect(420,40,760,620);}
+  if(clut){const cols=['#8b5a3c','#3c6e8b','#9b9b3c','#6b3c8b','#3c8b5a','#a85f5f'];for(let i=0;i<14;i++){x.fillStyle=cols[i%6];const xx=(i*137)%1500,yy=120+(i*251)%520;x.fillRect(xx,yy,120+(i*37)%160,60+(i*53)%140);}}
+  x.fillStyle='#b8a690';x.fillRect(0,700,1600,200);
+  drawFront(x,P,sim?'#c4ccd2':'#2f4f7f',sim?'#d6d0c8':'#e7c3a6');
+  m.fillStyle='#000';m.fillRect(0,0,1600,900);drawFront(m,P,'#fff','#fff');
+  const img=x.getImageData(0,0,W5,H5),mk=m.getImageData(0,0,W5,H5).data,d=img.data;
+  const gain=Math.pow(2,M5.e)*(back?.38:1),sig=M5.n*70;
+  for(let i=0;i<W5*H5*3;i+=97)NZ5[(i*7+Math.floor(M5.t*1000))%NZ5.length]=gauss();
+  let lp=0,np=0,lb=0,nb=0,clip=0;
+  for(let i=0,j=0;i<d.length;i+=4,j+=3){for(let ch=0;ch<3;ch++){let v=d[i+ch]*gain+NZ5[(j+ch)%NZ5.length]*sig;d[i+ch]=v<0?0:v>255?255:v;}
+    const L=(d[i]+d[i+1]+d[i+2])/3;if(mk[i]>128){lp+=L;np++;if(L>=250||L<=6)clip++;}else{const px=(i/4)%W5;if(px>W5*.3&&px<W5*.7){lb+=L;nb++;}}}
+  x.setTransform(1,0,0,1,0,0);x.putImageData(img,0,0);
+  const dw=Math.min(w-40,(h-60)*16/9),dh=dw*9/16,dx=(w-dw)/2,dy=44;c.imageSmoothingEnabled=true;c.drawImage(oc5,dx,dy,dw,dh);
+  const Lp=lp/Math.max(np,1),Lb=lb/Math.max(nb,1),con=Math.abs(Lp-Lb)/255,cf=clip/Math.max(np,1);
+  let q=con*3.2-M5.n*.9-cf*1.4-(clut?.18:0);q=Math.max(0,Math.min(1,q));
+  const D=p=>[dx+p[0]/1600*dw,dy+p[1]/900*dh];let html='',sum=0;const Q={};
+  KP5.forEach(([n,zh,b])=>{const cf2=Math.max(0,Math.min(.99,q*b+(Math.random()-.5)*.06));sum+=cf2;const j=(1-cf2)*dw*.03;const p=D(P[n]);Q[n]=cf2<.3?null:[p[0]+gauss()*j,p[1]+gauss()*j];
+    const col=cf2>.7?'#4f8a6e':cf2>.4?'#c8743f':'#c0504d';html+=`<span>${zh}</span><div class="bar"><i style="width:${cf2*100}%;background:${col}"></i></div><b style="text-align:right">${cf2<.3?'遺失':f(cf2,2)}</b>`;});
+  ['lsh','rsh','lhip','rhip','lkn','rkn','lank','rank'].forEach(n=>{if(!(n in Q)){const p=D(P[n]);Q[n]=q<.3?null:[p[0]+gauss()*(1-q)*dw*.02,p[1]+gauss()*(1-q)*dw*.02];}});
+  E_BODY.forEach(([a,b])=>{if(Q[a]&&Q[b])line(c,...Q[a],...Q[b],C.skel,3);});for(const n in Q)if(Q[n])dot(c,...Q[n],5,'#fff',C.skel,2.5);
+  KP5.forEach(([n])=>{if(!Q[n]){const p=D(P[n]);line(c,p[0]-7,p[1]-7,p[0]+7,p[1]+7,C.red,3);line(c,p[0]-7,p[1]+7,p[0]+7,p[1]-7,C.red,3);}});
+  const avg=sum/KP5.length;text(c,avg>.7?'辨識穩定':avg>.4?'關鍵點開始亂跳':'辨識失敗：很多關節找不到',20,24,avg>.7?C.green:avg>.4?C.orange:C.red,17,'left',700);
+  setHTML($('r5c'),html);
+  rows($('r5'),[['人與背景亮度差（對比）',f(con*100,0)+' %'],['人身上過曝／死黑',f(cf*100,0)+' %'],['平均信心值',f(avg,2)]]);
+  $('v5e').textContent=(M5.e>0?'+':'')+f(M5.e,1)+' EV';$('v5n').textContent=M5.n<.2?'低':M5.n<.5?'中':'高';
+}
+
+/* ====== 7 骨架 ====== */
+const M6={set:'coco',u:.6,t:0,hover:null,P:null};
+group('m6',m=>M6.set=m);$('s6').oninput=e=>{M6.u=e.target.value/100;$('k6p').checked=false;};
+$('c6').addEventListener('pointermove',e=>{if(!M6.P)return;const [x,y]=ptr($('c6'),e);let best=null,bd=18;(M6.set==='mp'?MP:COCO).forEach((n,i)=>{const p=M6.P[n];const dd=Math.hypot(p[0]-x,p[1]-y);if(dd<bd){bd=dd;best=[n,i];}});M6.hover=best;});
+function draw6(dt){
+  const [c,w,h]=fit($('c6'));if($('k6p').checked){M6.t+=dt*.9;M6.u=(1-Math.cos(M6.t))/2;$('s6').value=M6.u*100;}
+  const H=h*.82,P=sideFig(w*.42,h*.92,H,M6.u);M6.P=P;
+  line(c,30,h*.92,w-30,h*.92,'#cfd8e1',2);drawSide(c,P,'#7d7393');
+  drawSkel(c,P,M6.set,C.skel,M6.set==='mp'?3.5:5);
+  // angle construction
+  const A=P.lhip,B=P.lkn,Cc=P.lank;arrow(c,...B,...A,C.blue,3);arrow(c,...B,...Cc,C.blue,3);
+  text(c,'A 髖',A[0]-18,A[1]-14,C.blue,14,'center',700);text(c,'B 膝',B[0]+24,B[1]-6,C.blue,14,'center',700);text(c,'C 踝',Cc[0]+24,Cc[1],C.blue,14,'center',700);
+  const a1=Math.atan2(A[1]-B[1],A[0]-B[0]),a2=Math.atan2(Cc[1]-B[1],Cc[0]-B[0]);c.save();c.strokeStyle=C.orange;c.lineWidth=3;c.beginPath();let d=a2-a1;while(d>Math.PI)d-=TAU;while(d<-Math.PI)d+=TAU;c.arc(...B,34,a1,a1+d,d<0);c.stroke();c.restore();
+  pill(c,`膝角 ${f(P.knee,0)}°`,B[0]+80,B[1]+30,C.orange,15);
+  // axis
+  arrow(c,16,16,90,16,C.muted,2);arrow(c,16,16,16,90,C.muted,2);text(c,'x',98,16,C.muted,13);text(c,'y',16,100,C.muted,13);text(c,'(0,0)',22,30,C.muted,11,'left');
+  const n=M6.set==='mp'?33:17;text(c,`${M6.set==='mp'?'MediaPipe Pose：33 個地標點':'YOLOv8-Pose：17 個關鍵點（COCO）'}`,w-20,24,C.ink,16,'right',700);
+  if(M6.hover){const [nm,i]=M6.hover,p=P[nm];dot(c,...p,9,null,C.red,3);pill(c,`#${i} ${ZH[nm]}（${EN[nm]}）  x=${f(p[0],0)}, y=${f(p[1],0)}`,Math.min(Math.max(p[0],180),w-180),p[1]-24,C.red,13);}
+  const BA=[A[0]-B[0],A[1]-B[1]],BC=[Cc[0]-B[0],Cc[1]-B[1]],dotp=BA[0]*BC[0]+BA[1]*BC[1];
+  rows($('r6'),[['A 髖 (x, y)',`(${f(A[0],0)}, ${f(A[1],0)})`],['B 膝 (x, y)',`(${f(B[0],0)}, ${f(B[1],0)})`],['C 踝 (x, y)',`(${f(Cc[0],0)}, ${f(Cc[1],0)})`],['BA·BC',f(dotp,0)],['|BA|·|BC|',f(Math.hypot(...BA)*Math.hypot(...BC),0)],['膝角 θ',f(P.knee,1)+'°'],['髖角（肩-髖-膝）',f(P.hipA,1)+'°'],['軀幹前傾（對垂直線）',f(P.trunk,1)+'°']]);
+  $('v6').textContent=f(M6.u*100,0)+'%';
+}
+
+/* ====== 8 MediaPipe vs YOLO ====== */
+const M7={m:'yolo',n:3,t:0};
+group('m7',m=>{M7.m=m;M7.t=0;});$('s7').oninput=e=>M7.n=+e.target.value;
+function draw7(dt){
+  const [c,w,h]=fit($('c7'));M7.t+=dt;const N=M7.n,yolo=M7.m==='yolo';
+  // pipeline
+  const steps=yolo?['影像','一次推論（整張圖）','所有人的框 + 17 點']:['影像','偵測人 → 裁切區域','地標模型：33 點 + 深度','下一幀直接追蹤'];
+  const sw=(w-40)/steps.length,ph=(M7.t*.8)%steps.length;
+  steps.forEach((s,i)=>{const x=20+i*sw;c.fillStyle=Math.floor(ph)===i?'#3a72b8':'#e9f1fa';c.beginPath();c.roundRect(x+4,14,sw-24,34,8);c.fill();text(c,s,x+4+(sw-24)/2,31,Math.floor(ph)===i?'#fff':C.ink,13,'center',600);if(i<steps.length-1)arrow(c,x+sw-18,31,x+sw+2,31,C.muted,2);});
+  // scene
+  const sy=64,sh=h*.5;c.fillStyle='#e6ebef';c.fillRect(20,sy,w-40,sh);c.fillStyle='#d3c6b4';c.fillRect(20,sy+sh*.82,w-40,sh*.18);
+  const people=[];for(let i=0;i<N;i++){const cx=20+(w-40)*(i+.5)/N,Hh=sh*(.72+.08*Math.sin(i*2.1)),a=40+60*(1+Math.sin(M7.t*1.6+i*1.3));people.push(frontFig(cx,sy+sh*.95,Hh,{aL:a,eL:20,aR:20+30*(1+Math.sin(M7.t*1.1+i)),eR:15}));}
+  const cl=['#5b6e8f','#8a5b6e','#5b8a6e','#8a7a5b','#6e5b8a','#5b858a'];
+  people.forEach((P,i)=>drawFront(c,P,cl[i%6]));
+  const scan=yolo&&Math.floor(ph)===1;
+  if(scan){const sx=20+(w-40)*(ph%1);c.fillStyle='rgba(58,114,184,.12)';c.fillRect(20,sy,sx-20,sh);line(c,sx,sy,sx,sy+sh,C.blue,2);}
+  people.forEach((P,i)=>{
+    const xs=Object.values(P).filter(Array.isArray).map(p=>p[0]),ys=Object.values(P).filter(Array.isArray).map(p=>p[1]);const bx=Math.min(...xs)-8,by=Math.min(...ys)-P.r-8,bw=Math.max(...xs)-bx+8,bh=Math.max(...ys)-by+8;
+    const active=yolo?true:i===0;
+    if(active){c.strokeStyle=yolo?C.orange:C.purple;c.lineWidth=2.5;c.strokeRect(bx,by,bw,bh);pill(c,yolo?`person ${(.86+.03*Math.sin(i)).toFixed(2)}  ID:${i+1}`:'追蹤中（ROI）',bx+bw/2,by-12,yolo?C.orange:C.purple,12);drawSkel(c,P,yolo?'coco':'mp',C.skel,yolo?4:3);}
+    else pill(c,'未處理',bx+bw/2,by+bh/2,C.muted,12,'rgba(255,255,255,.8)');
+  });
+  // cost chart
+  const g=new G(80,sy+sh+30,w-120,h-(sy+sh+30)-36,1,6,0,100);g.axes(c,'每幀處理時間（ms，示意）',C.ink,'畫面中人數');
+  g.plot(c,n=>28+1.5*n,1,6,C.orange,3);g.plot(c,n=>9+10*n,1,6,C.purple,3,[6,4]);g.plot(c,()=>14,1,6,C.purple,2.5);
+  dot(c,g.X(N),g.Y(yolo?28+1.5*N:14),6,yolo?C.orange:C.purple,'#fff');
+  text(c,'— YOLOv8-Pose（人多也差不多）',g.x+g.w-8,g.y+14,C.orange,12,'right',600);text(c,'— MediaPipe 單人',g.x+g.w-8,g.y+32,C.purple,12,'right',600);text(c,'- - MediaPipe 設多人（每人再算一次）',g.x+g.w-8,g.y+50,C.purple,12,'right',600);
+  setHTML($('p7'),yolo?'<b>YOLOv8-Pose（由下而上一次完成）：</b>把整張影像丟進模型一次，就同時輸出「每個人的框＋17 個關鍵點」，適合多人課堂互動，例如最快舉手、團體挑戰。':'<b>MediaPipe Pose（先找人再細看）：</b>先找到一個人、裁切出那一區，再用地標模型找 33 個點（含手、腳、深度 z）。下一幀直接沿用位置追蹤，所以單人非常快、很細，適合個人訓練與即時回饋。');
+  $('v7').textContent=N+' 人';
+}
+
+/* ====== 9 座標與判定 ====== */
+const M8={m:'raise',a:60,t:0,st:null};
+group('m8',m=>{M8.m=m;$('raiseCtl').style.display=m==='raise'?'':'none';$('squatCtl').style.display=m==='squat'?'':'none';reset8();});
+$('s8a').oninput=e=>{M8.a=+e.target.value;$('k8p').checked=false;};$('s8n').oninput=()=>{};$('b8r').onclick=reset8;
+function reset8(){M8.t=0;M8.st={hist:[],naive:0,rob:0,truth:0,prev:180,state:'up',cnt:0,fa:0,lastRep:-1};}reset8();
+const DEPTH=[1,1,.5,1,.9,.45,1,1];
+function draw8(dt){
+  const [c,w,h]=fit($('c8'));
+  if(M8.m==='raise'){
+    if($('k8p').checked){M8.t+=dt;M8.a=90+80*Math.sin(M8.t*.8);$('s8a').value=M8.a;}
+    const iw=Math.min(w-40,(h-70)*16/9),ih=iw*9/16,ix=(w-iw)/2,iy=44,sc=1280/iw;
+    c.fillStyle='#eef2f5';c.fillRect(ix,iy,iw,ih);
+    const P=frontFig(ix+iw/2,iy+ih*.96,ih*.85,{aL:M8.a,eL:10,aR:15});drawFront(c,P,'#5b6e8f');drawSkel(c,P,'coco',C.skel,4);
+    const W=P.lwr,S=P.lsh,up=W[1]<S[1];
+    line(c,ix,S[1],ix+iw,S[1],C.orange,2,[6,5]);text(c,'肩膀高度 y',ix+iw-8,S[1]-10,C.orange,12,'right',700);
+    dot(c,...W,9,null,up?C.green:C.red,3);dot(c,...S,9,null,C.orange,3);
+    const X=p=>f((p[0]-ix)*sc,0),Y=p=>f((p[1]-iy)*sc,0);
+    pill(c,`左腕 (${X(W)}, ${Y(W)})`,W[0]+80,W[1],up?C.green:C.red,12);pill(c,`左肩 (${X(S)}, ${Y(S)})`,S[0]+90,S[1]+22,C.orange,12);
+    arrow(c,ix+6,iy+6,ix+90,iy+6,C.ink,2);arrow(c,ix+6,iy+6,ix+6,iy+90,C.ink,2);text(c,'x →',ix+100,iy+10,C.ink,12,'left',700);text(c,'y ↓',ix+12,iy+100,C.ink,12,'left',700);text(c,'(0, 0)',ix+12,iy+22,C.ink,11,'left');
+    pill(c,up?'✋ 舉手！（腕 y < 肩 y）':'未舉手（腕 y ≥ 肩 y）',w/2,iy+ih+16,up?C.green:C.muted,16);
+    text(c,'影像座標：原點在左上角，y 往下越大',20,22,C.ink,16,'left',700);
+    rows($('r8'),[['左腕 y（像素）',Y(W)],['左肩 y（像素）',Y(S)],['正規化 腕 y（÷720）',f((W[1]-iy)*sc/720,3)],['正規化 肩 y（÷720）',f((S[1]-iy)*sc/720,3)],['判定',up?'舉手':'未舉手']]);
+    setHTML($('p8'),'<b>影像座標和數學課相反：</b>原點在<b>左上角</b>，y 往下越大。所以「手比肩膀高」＝<b>手腕 y 比肩膀 y 小</b>。<br>講義的判定式「手腕 Y &lt; 肩膀 Y × 0.85」再乘 0.85，是要求手要舉得更明顯，避免誤判。<br>MediaPipe 輸出的是 0–1 的<b>正規化座標</b>（像素 ÷ 寬或高）。');
+    $('v8a').textContent=f(M8.a,0)+'°';
+  }else{
+    const S=M8.st,sig=+$('s8n').value;M8.t+=dt;const per=2.6,k=Math.floor(M8.t/per)%DEPTH.length,ph=(M8.t%per)/per,dep=DEPTH[k];
+    const u=dep*(1-Math.cos(TAU*ph))/2;let knee=S.hist.length?S.hist[S.hist.length-1]:180;
+    S.acc=(S.acc||0)+dt;while(S.acc>=1/30){S.acc-=1/30;knee=180-113*u+gauss()*sig;
+      S.hist.push(knee);if(S.hist.length>360)S.hist.shift();
+      if(S.prev>=130&&knee<130)S.naive++;S.prev=knee;
+      if(S.state==='up'){if(knee<100){S.cnt++;if(S.cnt>=3){S.state='down';S.cnt=0;}}else S.cnt=0;}else{if(knee>160){S.cnt++;if(S.cnt>=3){S.state='up';S.cnt=0;S.rob++;}}else S.cnt=0;}}
+    const rep=Math.floor(M8.t/per);if(ph>.5&&S.lastRep!==rep){S.lastRep=rep;if(DEPTH[rep%DEPTH.length]*113>80)S.truth++;}
+    const P=sideFig(w*.18,h*.62,h*.5,u);line(c,20,h*.62,w*.36,h*.62,'#cfd8e1',2);drawSide(c,P,'#7d7393');drawSkel(c,P,'coco',C.skel,4,.9);
+    pill(c,`膝角 ${f(knee,0)}°`,w*.18,h*.07,C.orange,15);pill(c,dep<.7?'這下蹲得太淺':'完整深蹲',w*.18,h*.07+30,dep<.7?C.red:C.green,12);
+    const g=new G(w*.42,40,w*.54,h*.5,0,360,50,190);g.axes(c,'膝角 (°)（最近 12 秒，30 fps）',C.orange,'');
+    g.clip(c);[[130,C.red,'單一門檻 130°'],[100,C.green,'下門檻 100°'],[160,C.green,'上門檻 160°']].forEach(([v,col,s])=>{line(c,g.x,g.Y(v),g.x+g.w,g.Y(v),col,1.5,[6,4]);text(c,s,g.x+6,g.Y(v)-8,col,11,'left',600);});
+    c.strokeStyle=C.orange;c.lineWidth=2;c.beginPath();S.hist.forEach((v,i)=>{const X=g.X(360-S.hist.length+i),Y=g.Y(v);i?c.lineTo(X,Y):c.moveTo(X,Y);});c.stroke();c.restore();
+    const bx=w*.42,by=h*.68,bw=w*.54;[['實際完成的標準深蹲',S.truth,C.ink],['單一門檻（跨過 130° 就算）',S.naive,C.red],['雙門檻＋連續 3 幀確認',S.rob,C.green]].forEach(([s,v,col],i)=>{const y=by+i*44;c.fillStyle='#f7f9fb';c.fillRect(bx,y,bw,36);text(c,s,bx+12,y+18,col,14,'left',600);text(c,v+' 下',bx+bw-12,y+18,col,20,'right',700);});
+    rows($('r8'),[['目前狀態',S.state==='up'?'站立':'蹲下'],['雜訊',sig+'°'],['實際標準次數',S.truth],['單一門檻計數',S.naive],['雙門檻計數',S.rob]]);
+    setHTML($('p8'),'<b>從關鍵點到「次數」：</b>AI 的關鍵點每幀都會抖動。只用一條門檻線，雜訊在線附近上下跳，就會<b>重複計數</b>；動作做太淺也可能被算進去。<br><b>改良做法：</b>設兩條門檻（遲滯），蹲到 &lt;100° 才算「下」，起身 &gt;160° 才算完成一次，並要求連續 3 幀成立。');
+    $('v8n').textContent=sig+'°';
+  }
+}
+
+/* ====== 10 光標→關節中心 ====== */
+const M9={m:'jc',w:25,a:12,t:0};
+group('m9',m=>{M9.m=m;$('jcCtl').style.display=m==='jc'?'':'none';$('lcsCtl').style.display=m==='lcs'?'':'none';});
+$('s9w').oninput=e=>M9.w=+e.target.value;$('s9a').oninput=e=>M9.a=+e.target.value;
+function marker(c,p,lab,side){dot(c,p[0],p[1],8,'#d9dde2','#555',1.5);dot(c,p[0]-2.5,p[1]-2.5,2.5,'#fff');if(lab)text(c,lab,p[0]+(side||1)*12,p[1]-12,'#444',12,side<0?'right':'left',600);}
+function vjc(c,p,lab,side,dx){c.save();c.strokeStyle=C.orange;c.lineWidth=3;line(c,p[0]-8,p[1],p[0]+8,p[1],C.orange,3);line(c,p[0],p[1]-8,p[0],p[1]+8,C.orange,3);c.restore();dot(c,p[0],p[1],10,null,C.orange,2);if(lab)text(c,lab,p[0]+(side||1)*(dx||16),p[1]+2,C.orange,13,side<0?'right':'left',700);}
+function draw9(dt){
+  const [c,w,h]=fit($('c9'));if(M9.m!=='lcs'||$('k9p').checked)M9.t+=dt;
+  if(M9.m==='jc'){
+    const Wp=M9.w,a=M9.a*RAD,cx=w*.5,py=h*.16,s=Math.min(h*.78/(84+.3*Wp+8),w/90);
+    const RA=[cx-Wp/2*s,py],LA=[cx+Wp/2*s,py],MID=[cx,py];
+    const HR=[cx-.36*Wp*s,py+.30*Wp*s],HL=[cx+.36*Wp*s,py+.30*Wp*s];
+    const dR=[-Math.sin(a),Math.cos(a)],nR=[-Math.cos(a),-Math.sin(a)],dL=[0,1],nL=[1,0];
+    const add=(p,v,k)=>[p[0]+v[0]*k,p[1]+v[1]*k];
+    const KR=add(HR,dR,42*s),AR=add(KR,dR,42*s),KL=add(HL,dL,42*s),AL=add(KL,dL,42*s);
+    const KRl=add(KR,nR,5*s),KRm=add(KR,nR,-5*s),ARl=add(AR,nR,3.5*s),ARm=add(AR,nR,-3.5*s),KLl=add(KL,nL,5*s),KLm=add(KL,nL,-5*s),ALl=add(AL,nL,3.5*s),ALm=add(AL,nL,-3.5*s);
+    const GT=add(add(HR,nR,8*s),dR,2*s);
+    // body silhouette
+    c.save();c.fillStyle='rgba(138,127,166,.13)';c.beginPath();c.moveTo(RA[0]-3*s,py-8*s);c.lineTo(LA[0]+3*s,py-8*s);c.lineTo(HL[0]+9*s,HL[1]+4*s);c.lineTo(HR[0]-9*s,HR[1]+4*s);c.closePath();c.fill();c.restore();
+    [[HR,KR,AR],[HL,KL,AL]].forEach(([H,K,A])=>{line(c,...H,...K,'rgba(138,127,166,.18)',15*s);line(c,...K,...A,'rgba(138,127,166,.18)',11*s);});
+    // construction
+    line(c,...RA,...LA,C.muted,1.5,[5,4]);text(c,`ASIS 間距 ${Wp} cm`,cx,py-16,C.muted,12,'center',600);
+    line(c,...MID,HR[0],MID[1],C.purple,2);line(c,HR[0],MID[1],...HR,C.purple,2);
+    text(c,`外側 36%＝${f(.36*Wp,1)} cm`,(MID[0]+HR[0])/2,py+12,C.purple,11,'center',600);text(c,`下方 30%＝${f(.30*Wp,1)} cm`,HR[0]-6,(py+HR[1])/2,C.purple,11,'right',600);
+    line(c,...KRl,...KRm,C.muted,1.5,[3,3]);line(c,...KLl,...KLm,C.muted,1.5,[3,3]);line(c,...ARl,...ARm,C.muted,1.5,[3,3]);line(c,...ALl,...ALm,C.muted,1.5,[3,3]);
+    // segments
+    line(c,...HR,...KR,C.blue,5);line(c,...KR,...AR,C.blue,5);line(c,...HL,...KL,C.blue,5);line(c,...KL,...AL,C.blue,5);line(c,...HR,...HL,C.blue,3);
+    const gt=$('k9gt').checked;if(gt){line(c,...GT,...KR,C.red,4,[7,5]);}
+    // markers
+    marker(c,RA,'右 ASIS',-1);marker(c,LA,'左 ASIS',1);marker(c,KRl,'股骨外髁',-1);marker(c,KRm);marker(c,ARl,'外踝',-1);marker(c,ARm);marker(c,KLl,'',1);marker(c,KLm);marker(c,ALl);marker(c,ALm);marker(c,GT);text(c,'大轉子',GT[0]-12,GT[1]+18,'#444',12,'right',600);
+    vjc(c,HR,'',1);vjc(c,HL,'髖關節中心（虛擬）',1,16);vjc(c,KR);vjc(c,KL,'膝中心＝內外髁中點',1,5*s+20);vjc(c,AR);vjc(c,AL,'踝中心＝內外踝中點',1,3.5*s+20);
+    text(c,'正面圖：灰色球＝貼在皮膚上的反光光標　橙色十字＝算出來的關節中心',20,22,C.ink,15,'left',700);
+    const tAng=M9.a,gAng=Math.atan2(-(KR[0]-GT[0]),KR[1]-GT[1])*DEG;
+    rows($('r9'),[['ASIS 間距 d',Wp+' cm'],['髖中心：往外側 0.36d',f(.36*Wp,1)+' cm'],['髖中心：往下方 0.30d',f(.30*Wp,1)+' cm'],['髖中心：往後方 0.19d（側面）',f(.19*Wp,1)+' cm'],['膝中心',' (外髁 + 內髁) / 2'],['真實大腿外展角',f(tAng,1)+'°'],...(gt?[['用大轉子算出的外展角',f(gAng,1)+'°'],['誤差',f(gAng-tAng,1)+'°']]:[])]);
+    setHTML($('p9'),'<b>關節中心看不到、也貼不到光標</b>，只能用骨性標記推算：<br>・<b>膝、踝</b>：內外兩顆光標的<b>中點</b><br>・<b>髖</b>：藏在骨盆深處，用 ASIS 間距乘上比例的<b>迴歸公式</b>推估（Bell 等人：後 19%、下 30%、外 36%）<br>連接相鄰的關節中心，就得到<b>肢段</b>（大腿＝髖中心→膝中心）。<br>直接拿大轉子當髖關節，肢段角度就會算錯。');
+    $('v9w').textContent=Wp+' cm';$('v9a').textContent=M9.a+'°';
+  }else{
+    const ox=60,oy=h-50;arrow(c,ox,oy,ox+90,oy,C.ink,2);arrow(c,ox,oy,ox,oy-90,C.ink,2);text(c,'X',ox+100,oy,C.ink,13,'left',700);text(c,'Y',ox,oy-100,C.ink,13,'center',700);text(c,'全域座標（實驗室）',ox,oy+20,C.muted,12,'left');
+    const phi=(-90+35*Math.sin(M9.t*.8))*RAD;
+    const hip=[w*.45,h*.18],L=h*.62,d=[Math.cos(phi),-Math.sin(phi)],n=[Math.sin(phi),Math.cos(phi)];
+    const W=(u,v)=>[hip[0]+d[0]*u*L+n[0]*v*L,hip[1]+d[1]*u*L+n[1]*v*L];
+    const knee=W(1,0);line(c,...hip,...knee,'rgba(138,127,166,.25)',L*.16);line(c,...hip,...knee,C.blue,4);dot(c,...hip,7,'#fff',C.ink);dot(c,...knee,7,'#fff',C.ink);
+    const m1=W(.35,-.07),m2=W(.68,-.05),m3=W(.47,.11);
+    c.save();c.fillStyle='rgba(120,120,120,.18)';c.beginPath();c.moveTo(...m1);c.lineTo(...m2);c.lineTo(...m3);c.closePath();c.fill();c.restore();
+    marker(c,m1,'P1',-1);marker(c,m2,'P2',1);marker(c,m3,'P3',1);
+    const e1=[m2[0]-m1[0],m2[1]-m1[1]],l1=Math.hypot(...e1);e1[0]/=l1;e1[1]/=l1;const v=[m3[0]-m1[0],m3[1]-m1[1]],dp=v[0]*e1[0]+v[1]*e1[1];const e2=[v[0]-dp*e1[0],v[1]-dp*e1[1]],l2=Math.hypot(...e2);e2[0]/=l2;e2[1]/=l2;
+    arrow(c,...m1,m1[0]+e1[0]*70,m1[1]+e1[1]*70,C.red,3);arrow(c,...m1,m1[0]+e2[0]*70,m1[1]+e2[1]*70,C.green,3);
+    text(c,'x̂',m1[0]+e1[0]*84,m1[1]+e1[1]*84,C.red,16,'center',700);text(c,'ŷ',m1[0]+e2[0]*84,m1[1]+e2[1]*84,C.green,16,'center',700);
+    const ang=Math.atan2(-e1[1],e1[0])*DEG,thigh=Math.atan2(-(knee[1]-hip[1]),knee[0]-hip[0])*DEG;
+    text(c,'大腿上的 3 顆光標（剛體貼片）→ 建立大腿自己的座標系',20,22,C.ink,15,'left',700);
+    const cm=p=>`(${f((p[0]-ox)/L*45,1)}, ${f((oy-p[1])/L*45,1)})`;
+    rows($('r9'),[['P1',cm(m1)],['P2',cm(m2)],['P3',cm(m3)],['x̂ 軸相對全域 X',f(ang,1)+'°'],['大腿長軸相對全域 X',f(thigh,1)+'°'],['兩者差（固定值）',f(thigh-ang,1)+'°']]);
+    setHTML($('p9'),'<b>局部座標系（LCS）：</b>每個肢段上貼 ≥3 顆不在同一直線的光標，就能建立這個肢段自己的 x、y、z 軸：<br>x̂ = (P2−P1) / |P2−P1|<br>ẑ = x̂ × (P3−P1)，再單位化<br>ŷ = ẑ × x̂<br>比較兩個相鄰肢段座標系的旋轉，就能算出 3D 關節角度（例如膝屈伸、內外轉）。<br>注意：x̂ 和大腿長軸差一個<b>固定角度</b>，要靠「靜態站姿校正」先記下來。');
+  }
+}
+
+/* ====== 11 肢段與全身質心 ====== */
+const M10={u:.5,t:0};$('s10').oninput=e=>{M10.u=e.target.value/100;$('k10p').checked=false;};
+const SEG10=[['頭頸','head',null,0,.081,false],['軀幹','sh','hip',.5,.497,false],['上臂','sh','el',.436,.028,true],['前臂','el','wr',.430,.016,true],['手','wr','idx',.506,.006,true],['大腿','hip','kn',.433,.100,true],['小腿','kn','ank',.433,.0465,true],['足','heel','foot',.5,.0145,true]];
+function draw10(dt){
+  const [c,w,h]=fit($('c10'));if($('k10p').checked){M10.t+=dt*.7;M10.u=(1-Math.cos(M10.t))/2;$('s10').value=M10.u*100;}
+  const g=h*.92,H=h*.8,P=sideFig(w*.45,g,H,M10.u),kg=+$('s10m').value;
+  line(c,30,g,w-30,g,'#cfd8e1',2);drawSide(c,P,'#9b93ad','#e9cdb6');
+  let sx=0,sy=0;const dots=[];
+  SEG10.forEach(([nm,a,b,fr,m,bi])=>{(bi?['l','r']:['l']).forEach(sd=>{let p;if(!b)p=P.head;else{const A=a==='head'?P.head:P[sd+a],B=P[sd+b];p=[A[0]+(B[0]-A[0])*fr,A[1]+(B[1]-A[1])*fr];}sx+=p[0]*m;sy+=p[1]*m;dots.push([p,m,nm]);});});
+  if($('k10s').checked)dots.forEach(([p,m])=>dot(c,...p,Math.max(3,Math.sqrt(m)*30),'rgba(200,116,63,.85)','#fff',1.5));
+  const cm=[sx,sy];
+  line(c,cm[0],cm[1],cm[0],g,C.ink,1.5,[5,4]);
+  const bx0=Math.min(P.lheel[0],P.rheel[0]),bx1=Math.max(P.lfoot[0],P.rfoot[0]);c.fillStyle='rgba(79,138,110,.3)';c.fillRect(bx0,g-4,bx1-bx0,8);
+  // COM symbol
+  const R=13;c.save();c.beginPath();c.arc(...cm,R,0,TAU);c.fillStyle='#fff';c.fill();c.fillStyle=C.ink;c.beginPath();c.moveTo(...cm);c.arc(...cm,R,-Math.PI/2,0);c.closePath();c.fill();c.beginPath();c.moveTo(...cm);c.arc(...cm,R,Math.PI/2,Math.PI);c.closePath();c.fill();c.strokeStyle=C.ink;c.lineWidth=2;c.beginPath();c.arc(...cm,R,0,TAU);c.stroke();c.restore();
+  const inside=cm[0]>=bx0&&cm[0]<=bx1;
+  pill(c,'全身質心 COM',cm[0]+80,cm[1],C.ink,13);pill(c,inside?'質心投影在支撐面內 → 穩定':'質心投影超出支撐面 → 會倒！',w/2,g-30,inside?C.green:C.red,14);
+  text(c,'● 橙點＝各肢段質心（越大越重）　綠色＝支撐面（腳跟到腳尖）',20,22,C.ink,14,'left',600);
+  const pxcm=170/H;const ank=P.lank;
+  rows($('r10'),[['質心高度',f((g-cm[1])*pxcm,1)+' cm'],['佔身高',f((g-cm[1])/H*100,0)+' %'],['質心在踝關節前方',f((cm[0]-ank[0])*pxcm,1)+' cm'],['大腿質量（單側）',f(kg*.1,1)+' kg'],['軀幹質量',f(kg*.497,1)+' kg'],['穩定性',inside?'在支撐面內':'超出支撐面']]);
+  $('v10').textContent=f(M10.u*100,0)+'%';$('v10m').textContent=kg+' kg';
+}
+
+/* ====== 12 雙攝影機 3D 重建 ====== */
+const M11={a:90,n:.3,M:[.4,.3],d:[0,0],tt:0,drag:false,view:null};
+$('s11a').oninput=e=>M11.a=+e.target.value;$('s11n').oninput=e=>M11.n=+e.target.value;
+(function(){const cv=$('c11');const set=e=>{if(!M11.view)return;const [x,y]=ptr(cv,e);const {O,S}=M11.view;M11.M=[Math.max(-1.5,Math.min(1.5,(x-O[0])/S)),Math.max(-1.5,Math.min(1.5,(O[1]-y)/S))];};
+ cv.addEventListener('pointerdown',e=>{M11.drag=true;set(e);cv.setPointerCapture(e.pointerId);});cv.addEventListener('pointermove',e=>{if(M11.drag)set(e);});cv.addEventListener('pointerup',()=>M11.drag=false);})();
+function inter(P1,a1,P2,a2){const d1=[Math.cos(a1),Math.sin(a1)],d2=[Math.cos(a2),Math.sin(a2)],den=d1[0]*d2[1]-d1[1]*d2[0];if(Math.abs(den)<1e-9)return null;const t=((P2[0]-P1[0])*d2[1]-(P2[1]-P1[1])*d2[0])/den;return [P1[0]+d1[0]*t,P1[1]+d1[1]*t];}
+function draw11(dt){
+  const [c,w,h]=fit($('c11'));M11.tt+=dt;if(M11.tt>.7){M11.tt=0;M11.d=[gauss(),gauss()];}
+  const R=3.4,S=Math.min(w,h)/(2*R+1.6),O=[w/2,h*.4+S*.6];M11.view={O,S};const T=p=>[O[0]+p[0]*S,O[1]-p[1]*S];
+  for(let i=-4;i<=4;i++){line(c,...T([i*.5,-1.5]),...T([i*.5,1.5]),i===0?'#d5dee7':'#eef2f5',1);line(c,...T([-1.5,i*.5]),...T([1.5,i*.5]),i===0?'#d5dee7':'#eef2f5',1);}
+  c.strokeStyle='#b8c4cf';c.lineWidth=2;c.strokeRect(...T([-1.5,1.5]),3*S,3*S);text(c,'拍攝範圍 3 × 3 m（俯視）',T([-1.5,1.5])[0],T([-1.5,1.5])[1]-12,C.muted,12,'left',600);
+  const one=$('k11one').checked,al=M11.a*RAD,cams=[-Math.PI/2-al/2,-Math.PI/2+al/2].map(q=>[R*Math.cos(q),R*Math.sin(q)]);
+  const Mk=M11.M,sg=M11.n*RAD,cols=[C.blue,C.green];const meas=[];
+  cams.forEach((cp,i)=>{if(one&&i===1)return;const tr=Math.atan2(Mk[1]-cp[1],Mk[0]-cp[0]),ms=tr+M11.d[i]*sg;meas.push([cp,ms,tr]);
+    const look=Math.atan2(-cp[1],-cp[0]);const sp=T(cp);c.save();c.translate(...sp);c.rotate(-look);c.fillStyle=C.ink;c.fillRect(-16,-10,26,20);c.fillRect(8,-6,10,12);c.restore();text(c,`攝影機 ${i+1}`,sp[0],sp[1]+26,cols[i],13,'center',700);
+    const end=[cp[0]+Math.cos(ms)*2*R,cp[1]+Math.sin(ms)*2*R];line(c,...sp,...T(end),cols[i],2.5);});
+  if(!one&&sg>0){const q=[];for(const [s1,s2] of [[1,1],[1,-1],[-1,-1],[-1,1]]){const p=inter(meas[0][0],meas[0][2]+s1*sg*2,meas[1][0],meas[1][2]+s2*sg*2);if(p)q.push(T(p));}
+    if(q.length===4){c.fillStyle='rgba(122,104,168,.22)';c.strokeStyle=C.purple;c.lineWidth=1.5;c.beginPath();q.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.closePath();c.fill();c.stroke();}}
+  dot(c,...T(Mk),9,C.red,'#fff');
+  let err=null,diam=null;
+  if(one){const [cp,ms]=meas[0];[.35,.6,.85].forEach(k=>{const p=[cp[0]+Math.cos(ms)*R*2*k,cp[1]+Math.sin(ms)*R*2*k];dot(c,...T(p),8,null,C.blue,2);text(c,'?',T(p)[0]+14,T(p)[1],C.blue,16,'center',700);});pill(c,'只有一條視線：光標在這條線上的哪裡？深度未知！',w/2,24,C.red,14);}
+  else{const P=inter(meas[0][0],meas[0][1],meas[1][0],meas[1][1]);if(P){err=Math.hypot(P[0]-Mk[0],P[1]-Mk[1])*1000;const sp=T(P);line(c,sp[0]-9,sp[1]-9,sp[0]+9,sp[1]+9,C.purple,3);line(c,sp[0]-9,sp[1]+9,sp[0]+9,sp[1]-9,C.purple,3);}
+    const q=[];for(const [s1,s2] of [[1,1],[1,-1],[-1,-1],[-1,1]]){const p=inter(meas[0][0],meas[0][2]+s1*sg*2,meas[1][0],meas[1][2]+s2*sg*2);if(p)q.push(p);}if(q.length===4)diam=Math.max(Math.hypot(q[0][0]-q[2][0],q[0][1]-q[2][1]),Math.hypot(q[1][0]-q[3][0],q[1][1]-q[3][1]))*1000;
+    text(c,'● 紅＝真實光標　✕ 紫＝兩條視線交會（重建結果）　紫色區＝誤差範圍',20,24,C.ink,14,'left',600);}
+  rows($('r11'),[['兩台夾角',M11.a+'°'],['角度量測誤差',f(M11.n,2)+'°'],['光標真實位置',`(${f(Mk[0],2)}, ${f(Mk[1],2)}) m`],['這一次重建誤差',one?'無法計算':err==null?'—':f(err,1)+' mm'],['誤差範圍最長',one?'—':diam==null?'—':f(diam,0)+' mm']]);
+  $('v11a').textContent=M11.a+'°';$('v11n').textContent=f(M11.n,2)+'°';
+}
+
+/* ---------------- loop ---------------- */
+const DRAW=[draw0,draw1,draw2,draw3,draw4,draw5,draw6,draw7,draw8,draw9,draw10,draw11];let cur=0,last=performance.now();
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{cur=+b.dataset.i;document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('on',i===cur));});
+$('fs').onclick=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();};
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;try{DRAW[cur](dt);}catch(e){console.error(e);}requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
